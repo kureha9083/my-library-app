@@ -8,30 +8,25 @@ export async function POST(req: Request) {
     const { prompt } = await req.json();
 
     const strictPrompt = `
-ユーザーの要望: "${prompt}"
-上記に合うおすすめの本を5冊提案してください。
-必ず以下のJSON配列形式で出力してください。それ以外の文字は一切不要です。
+おすすめの本を5冊提案してください。
+【絶対ルール】JSON以外の文字（挨拶や解説）は一切出力しないでください。
 [
   {
-    "title": "本のタイトル",
+    "title": "タイトル",
     "author": "著者名",
-    "reason": "60文字〜80文字の簡潔な推薦理由"
+    "reason": "60文字〜80文字の推薦理由"
   }
 ]
-`;
+ユーザーの要望: "${prompt}"`;
 
-    // ★ここが最強の解決策：AIの口を塞ぎ「絶対にデータしか返せない」ようにする設定
     const model = genAI.getGenerativeModel({
       model: 'gemini-1.5-flash',
-      generationConfig: {
-        responseMimeType: "application/json",
-      }
+      // ★AIにデータ以外の出力を物理的に禁止させる設定
+      generationConfig: { responseMimeType: "application/json" }
     });
 
     const result = await model.generateContent(strictPrompt);
-    const responseText = result.response.text();
-
-    return NextResponse.json({ text: responseText });
+    return NextResponse.json({ text: result.response.text() });
 
   } catch (error) {
     return NextResponse.json({ error: 'AIエラー' }, { status: 500 });
