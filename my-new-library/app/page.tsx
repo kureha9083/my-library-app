@@ -4,66 +4,58 @@ import { useState, useEffect } from 'react';
 
 export default function Home() {
   // ==========================================
-  // 1. 状態管理（データの保存場所）
+  // 1. 状態管理（State）
   // ==========================================
   const [input, setInput] = useState('');
   const [proposals, setProposals] = useState<any[]>([]);
-  const [rawTextFallback, setRawTextFallback] = useState(''); // AIが普通の文章で返してきた時用の表示枠
   const [loading, setLoading] = useState(false);
   const [searchMode, setSearchMode] = useState('general');
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [errorMessage, setErrorMessage] = useState(''); // エラー時のメッセージ表示用
+  const [expandedId, setExpandedId] = useState<number | null>(null); // 詳細表示用
+  const [error, setError] = useState('');
 
   // ==========================================
-  // 2. 現在地の自動取得
+  // 2. 初期化・位置情報取得
   // ==========================================
   useEffect(() => {
     if (typeof window !== 'undefined' && 'geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setCoords({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        (error) => {
-          console.warn("位置情報の取得スキップ（手動検索を利用します）:", error.message);
-        }
+        (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => console.log("位置情報取得スキップ:", err.message)
       );
     }
   }, []);
 
   // ==========================================
-  // 3. マップ検索機能
+  // 3. 外部連携・検索ロジック
   // ==========================================
+  
+  // マップ検索
   const searchNearby = (keyword: string) => {
-    let url = "";
-    if (coords) {
-      url = `https://www.google.com/maps/search/$${keyword}/@${coords.lat},${coords.lng},15z`;
-    } else {
-      url = `https://www.google.com/maps/search/$${keyword}+現在地`;
-    }
+    const url = coords 
+      ? `http://googleusercontent.com/maps.google.com/9{keyword}/@${coords.lat},${coords.lng},15z`
+      : `http://googleusercontent.com/maps.google.com/9{keyword}+現在地`;
     window.open(url, '_blank');
   };
 
-  // ==========================================
-  // 4. 入力欄のプレースホルダー（薄い文字）切り替え
-  // ==========================================
-  const getPlaceholder = () => {
-    if (searchMode === 'study') {
-      return "例：TOEIC 800点を目指すための単語帳や、初心者向けの分かりやすい簿記3級のテキストを探しています...";
-    }
-    return "いまの気分や、最近面白かった本、次に読んでみたい本のイメージを教えてください...";
+  // Amazon検索
+  const searchAmazon = (title: string) => {
+    window.open(`https://www.amazon.co.jp/s?k=${encodeURIComponent(title)}`, '_blank');
+  };
+
+  // YouTube検索（評価・レビュー確認用）
+  const searchYouTube = (title: string) => {
+    window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(title)}+レビュー+評価`, '_blank');
   };
 
   // ==========================================
-  // 5. AIへの相談機能（絶対に結果を表示する堅牢な処理）
+  // 4. AI相談ロジック（堅牢版）
   // ==========================================
   const askAI = async () => {
     setLoading(true);
+    setError('');
     setProposals([]);
-    setRawTextFallback('');
-    setErrorMessage('');
+    setExpandedId(null);
 
     try {
       const res = await fetch('/api/chat', {
@@ -72,172 +64,182 @@ export default function Home() {
         body: JSON.stringify({ prompt: input, mode: searchMode }),
       });
 
-      if (!res.ok) {
-        throw new Error(`サーバーエラーが発生しました (${res.status})`);
-      }
-
+      if (!res.ok) throw new Error("通信に失敗しました");
       const data = await res.json();
-      
-      // APIの構造がどうであれ、テキストを何としてでも抽出する
-      const text = data.text || data.response || data.message || data.answer || "";
+      const text = data.text || "";
 
-      if (!text) {
-        throw new Error("AIからの返答が空でした。もう一度お試しください。");
+      // JSON抽出処理
+      let cleanText = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+      const start = cleanText.indexOf('[');
+      const end = cleanText.lastIndexOf(']');
+
+      if (start !== -1 && end !== -1) {
+        const jsonStr = cleanText.substring(start, end + 1);
+        const parsed = JSON.parse(jsonStr);
+        setProposals(parsed);
+      } else {
+        // 万が一JSONじゃなかった場合の救済措置
+        setProposals([{ title: "提案が見つかりました", author: "AI司書", reason: text }]);
       }
-
-      // JSON配列として綺麗に解析できるか挑戦する
-      try {
-        let cleanText = text.replace(/```json/gi, "").replace(/```/g, "").trim();
-        const startIndex = cleanText.indexOf('[');
-        const endIndex = cleanText.lastIndexOf(']');
-        
-        if (startIndex !== -1 && endIndex !== -1) {
-          cleanText = cleanText.substring(startIndex, endIndex + 1);
-          cleanText = cleanText.replace(/,\s*\]/g, ']').replace(/,\s*\}/g, '}'); // 余分なカンマ除去
-          const parsedData = JSON.parse(cleanText);
-          
-          if (Array.isArray(parsedData) && parsedData.length > 0) {
-            setProposals(parsedData); // 成功：カード型で表示
-            return;
-          }
-        }
-        // JSONじゃない、または抽出失敗した場合は普通のテキストとして全表示する（何も出ないバグを防ぐ）
-        setRawTextFallback(text);
-      } catch (e) {
-        // 解析中にエラーが起きても、絶対に抽出したテキストは表示させる
-        setRawTextFallback(text);
-      }
-
-    } catch (error: any) {
-      console.error("AI相談エラー:", error);
-      setErrorMessage(error.message || "通信エラーが発生しました。時間をおいて再度お試しください。");
+    } catch (err: any) {
+      setError("申し訳ありません。検索中にエラーが発生しました。");
     } finally {
       setLoading(false);
     }
   };
 
   // ==========================================
-  // 6. UIの描画
+  // 5. 画面表示（UI）
   // ==========================================
   return (
-    <main className="min-h-screen bg-[#f8fafc] p-4 md:p-8 text-slate-800 flex flex-col items-center">
-      <div className="w-full max-w-4xl flex flex-col gap-8">
+    <main className="min-h-screen bg-[#f1f5f9] p-4 md:p-8 text-slate-800 flex flex-col items-center font-sans">
+      <div className="w-full max-w-5xl flex flex-col gap-6">
 
-        {/* ---------------- タイトル ---------------- */}
-        <div className="text-center pt-8 pb-2">
-          <h1 className="text-4xl font-extrabold text-slate-800 flex items-center justify-center gap-2">
-            MOMIJI <span className="text-sm block font-normal">〜 AI 図書館 〜</span>
+        {/* --- ヘッダー --- */}
+        <header className="text-center py-6">
+          <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-2">
+            MOMIJI <span className="text-xl font-light text-amber-600 italic">AI Library Service</span>
           </h1>
-          <p className="text-lg text-slate-600 font-bold mt-2">
-            定番からSNSの話題書まで、あなたに最適な「知」を提案します。
-          </p>
+          <p className="text-slate-500 font-bold">プロが選ぶ「今、読むべき一冊」を瞬時に提案</p>
+        </header>
+
+        {/* --- 広告枠（上部） --- */}
+        <div className="w-full bg-white border border-slate-200 rounded-xl p-4 text-center shadow-sm">
+          <span className="text-[10px] text-slate-400 block mb-1">SPONSORED</span>
+          <div className="h-20 flex items-center justify-center bg-slate-50 rounded border-2 border-dashed border-slate-200">
+            <p className="text-slate-400 text-sm">ここに広告が表示されます（Amazonアソシエイトなど）</p>
+          </div>
         </div>
 
-        {/* ---------------- タブ切り替え ---------------- */}
-        <div className="flex justify-center gap-2">
+        {/* --- モード切替 --- */}
+        <div className="flex justify-center gap-4 mb-2">
           <button
             onClick={() => setSearchMode('general')}
-            className={`px-6 py-2 rounded-full font-bold transition-all ${
-              searchMode === 'general' ? 'bg-white shadow-md text-amber-600' : 'text-slate-500 hover:bg-slate-200'
+            className={`px-8 py-3 rounded-2xl font-black transition-all ${
+              searchMode === 'general' ? 'bg-amber-500 text-white shadow-lg scale-105' : 'bg-white text-slate-400'
             }`}
           >
-            🕯️ 一般相談
+            🕯️ 一般文芸・話題作
           </button>
           <button
             onClick={() => setSearchMode('study')}
-            className={`px-6 py-2 rounded-full font-bold transition-all ${
-              searchMode === 'study' ? 'bg-white shadow-md text-indigo-600' : 'text-slate-500 hover:bg-slate-200'
+            className={`px-8 py-3 rounded-2xl font-black transition-all ${
+              searchMode === 'study' ? 'bg-indigo-600 text-white shadow-lg scale-105' : 'bg-white text-slate-400'
             }`}
           >
-            🎓 学習・資格
+            🎓 学習・資格・専門書
           </button>
         </div>
 
-        {/* ---------------- 相談パネル ---------------- */}
-        <section className="bg-white shadow-xl rounded-3xl p-8 border-t-8 border-amber-500 transition-all">
-          <h2 className="text-2xl font-extrabold text-slate-800 mb-6 flex items-center gap-2">
+        {/* --- メイン検索パネル --- */}
+        <section className="bg-white rounded-[2.5rem] shadow-2xl p-6 md:p-10 border-b-[12px] border-slate-200 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-600"></div>
+          
+          <h2 className="text-2xl font-black mb-6 flex items-center gap-3">
             {searchMode === 'study' ? (
-              <><span className="text-indigo-500">🎓</span> 必要な参考書の条件を入力</>
+              <><span className="p-2 bg-indigo-100 rounded-lg text-indigo-600">🎓</span> 専門書・学習参考書の検索</>
             ) : (
-              <><span className="text-amber-500">🖋️</span> 司書に相談する</>
+              <><span className="p-2 bg-amber-100 rounded-lg text-amber-600">🖋️</span> 司書に希望を伝える</>
             )}
           </h2>
 
-          <div className="flex flex-col gap-4">
+          <div className="space-y-4">
             <textarea
-              className="w-full border-2 border-slate-100 rounded-2xl p-5 text-lg font-medium focus:outline-none focus:border-amber-400 transition-colors resize-none h-32"
+              className="w-full bg-slate-50 border-2 border-slate-100 rounded-3xl p-6 text-lg font-bold focus:outline-none focus:border-amber-500 focus:bg-white transition-all h-40 shadow-inner"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={getPlaceholder()}
+              placeholder={
+                searchMode === 'study' 
+                  ? "例：TOEIC 800点を目指すための単語帳や、初心者向けの分かりやすい簿記3級のテキストを探しています。図解が多いものが希望です。" 
+                  : "例：最近仕事で疲れているので、心が温まるような短編小説や、SNSで話題のミステリーを5冊教えてください。"
+              }
             />
-            <div className="flex justify-end">
+            <div className="flex justify-between items-center px-2">
+              <p className="text-xs text-slate-400 font-medium italic">※AIが膨大なデータベースから最適な5冊を選定します</p>
               <button
                 onClick={askAI}
                 disabled={loading || !input}
-                className="bg-[#d97706] hover:bg-[#b45309] text-white font-bold py-3 px-8 rounded-xl transition-all disabled:opacity-50 shadow-md"
+                className="bg-slate-900 hover:bg-black text-white font-black py-4 px-12 rounded-2xl transition-all disabled:opacity-30 shadow-xl active:scale-95"
               >
-                {loading ? "蔵書から探しています..." : "定番・話題の5冊を探す"}
+                {loading ? "蔵書を検索中..." : "この条件で提案を受ける"}
               </button>
             </div>
           </div>
         </section>
 
-        {/* ---------------- マップ検索ボタン ---------------- */}
-        <div className="flex flex-wrap gap-4 justify-center mt-2">
-          <button
-            onClick={() => searchNearby("本屋")}
-            className="flex-1 min-w-[140px] max-w-[250px] bg-white border-2 border-slate-200 hover:border-green-400 p-4 rounded-xl transition-all flex items-center justify-center gap-2 text-slate-600 font-bold shadow-sm"
-          >
-            📚 近くの本屋
+        {/* --- マップ検索ツール --- */}
+        <div className="grid grid-cols-3 gap-3">
+          <button onClick={() => searchNearby("本屋")} className="bg-white p-4 rounded-2xl border-2 border-slate-100 hover:border-green-400 transition-all font-black text-slate-600 flex flex-col items-center gap-1 shadow-sm">
+            <span className="text-2xl">📚</span><span className="text-xs">近くの本屋</span>
           </button>
-          <button
-            onClick={() => searchNearby("カフェ")}
-            className="flex-1 min-w-[140px] max-w-[250px] bg-white border-2 border-slate-200 hover:border-orange-300 p-4 rounded-xl transition-all flex items-center justify-center gap-2 text-slate-600 font-bold shadow-sm"
-          >
-            ☕ 近くのカフェ
+          <button onClick={() => searchNearby("カフェ")} className="bg-white p-4 rounded-2xl border-2 border-slate-100 hover:border-orange-400 transition-all font-black text-slate-600 flex flex-col items-center gap-1 shadow-sm">
+            <span className="text-2xl">☕</span><span className="text-xs">近くのカフェ</span>
           </button>
-          <button
-            onClick={() => searchNearby("図書館")}
-            className="flex-1 min-w-[140px] max-w-[250px] bg-white border-2 border-slate-200 hover:border-blue-300 p-4 rounded-xl transition-all flex items-center justify-center gap-2 text-slate-600 font-bold shadow-sm"
-          >
-            📖 近くの図書館
+          <button onClick={() => searchNearby("図書館")} className="bg-white p-4 rounded-2xl border-2 border-slate-100 hover:border-blue-400 transition-all font-black text-slate-600 flex flex-col items-center gap-1 shadow-sm">
+            <span className="text-2xl">📖</span><span className="text-xs">近くの図書館</span>
           </button>
         </div>
 
-        {/* ---------------- エラーメッセージ表示 ---------------- */}
-        {errorMessage && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl mt-4">
-            <p className="text-red-700 font-bold">⚠️ エラー</p>
-            <p className="text-red-600">{errorMessage}</p>
-          </div>
-        )}
+        {/* --- エラー表示 --- */}
+        {error && <div className="bg-red-500 text-white p-4 rounded-2xl font-bold text-center animate-bounce">{error}</div>}
 
-        {/* ---------------- 結果表示（カード型） ---------------- */}
-        {proposals && proposals.length > 0 && (
-          <div className="grid gap-6 md:grid-cols-2 mt-4">
-            {proposals.map((book: any, i: number) => (
-              <div key={i} className="bg-white p-6 rounded-2xl shadow-md border-l-4 border-amber-500 hover:shadow-lg transition-all">
-                <h3 className="font-bold text-xl mb-2 text-slate-800">{book.title}</h3>
-                <p className="text-sm text-slate-500 mb-3 font-medium">著者: {book.author}</p>
-                <p className="text-slate-700 leading-relaxed">{book.reason}</p>
+        {/* --- 提案結果グリッド --- */}
+        <div className="grid gap-4">
+          {proposals.map((book, i) => (
+            <div key={i} className="bg-white rounded-3xl p-6 shadow-md border border-slate-100 flex flex-col gap-4 transition-all hover:shadow-xl">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-2xl font-black text-slate-800 mb-1">{book.title}</h3>
+                  <p className="text-slate-500 font-bold">著者: {book.author}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => searchAmazon(book.title)}
+                    className="px-4 py-2 bg-[#FF9900] text-white text-xs font-black rounded-full shadow-sm hover:brightness-110"
+                  >
+                    Amazonで探す
+                  </button>
+                  <button 
+                    onClick={() => searchYouTube(book.title)}
+                    className="px-4 py-2 bg-[#FF0000] text-white text-xs font-black rounded-full shadow-sm hover:brightness-110"
+                  >
+                    YouTube評価
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
-        )}
 
-        {/* ---------------- 結果表示（テキスト型：カードで出せなかった時の救済） ---------------- */}
-        {rawTextFallback && proposals.length === 0 && (
-          <div className="bg-white p-8 rounded-3xl shadow-lg border-t-8 border-amber-500 mt-4">
-            <h3 className="font-bold text-xl mb-4 text-slate-800 flex items-center gap-2">
-              <span className="text-amber-500">📚</span> 司書からの提案
-            </h3>
-            <div className="text-slate-700 leading-relaxed whitespace-pre-wrap">
-              {rawTextFallback}
+              {/* 詳細表示トグル */}
+              <div>
+                <button 
+                  onClick={() => setExpandedId(expandedId === i ? null : i)}
+                  className="text-amber-600 font-black text-sm flex items-center gap-1 hover:underline"
+                >
+                  {expandedId === i ? "▲ 詳細を閉じる" : "▼ AI司書の推薦理由を見る"}
+                </button>
+                
+                {expandedId === i && (
+                  <div className="mt-4 p-5 bg-slate-50 rounded-2xl border-l-4 border-amber-500 text-slate-700 leading-relaxed font-medium animate-fadeIn">
+                    {book.reason}
+                  </div>
+                )}
+              </div>
             </div>
+          ))}
+        </div>
+
+        {/* --- 広告枠（下部） --- */}
+        <div className="w-full bg-white border border-slate-200 rounded-xl p-4 text-center shadow-sm mt-8">
+          <span className="text-[10px] text-slate-400 block mb-1">ADVERTISEMENT</span>
+          <div className="h-32 flex items-center justify-center bg-slate-50 rounded border-2 border-dashed border-slate-200">
+            <p className="text-slate-400 text-sm font-bold">ここにバナー広告などを掲載できます</p>
           </div>
-        )}
+        </div>
 
       </div>
+      
+      <footer className="mt-20 pb-10 text-slate-400 text-xs font-bold">
+        © 2024 MOMIJI AI Library Service. All rights reserved.
+      </footer>
     </main>
   );
 }
