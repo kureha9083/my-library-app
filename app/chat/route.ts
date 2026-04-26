@@ -5,51 +5,40 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(req: Request) {
   try {
-    const { prompt, mode } = await req.json();
+    const { prompt } = await req.json();
 
-    // 役割設定
-    const role = mode === 'study' 
-      ? 'あなたはプロの学習コンサルタント兼・専門書の司書です。ユーザーの学習目標に最適な参考書や専門書を提案します。'
-      : 'あなたはプロの図書館司書です。ユーザーの気分や好みに合わせて、最適な一般文芸、小説、ビジネス書などを提案します。';
-
-    // AIへの命令文
+    // AIに対する「絶対ルール」をプロンプトで強制します
     const strictPrompt = `
-${role}
-以下の【ユーザーの要望】を分析し、最適な本を必ず5冊選び、指定されたJSONスキーマに従って出力してください。
-挨拶、解説、マークダウン記法は一切不要です。
+以下の要望に合う本を5冊提案してください。
 
-【ユーザーの要望】
-${prompt}
+【絶対ルール：必ず守ること】
+1. 必ず以下のJSON配列フォーマット「のみ」を出力してください。
+2. 挨拶、解説、Markdown記法（\`\`\`json など）は絶対に含めないでください。
+3. "reason"（詳細文）は、必ず【60文字〜80文字】で簡潔に本の魅力を書いてください。長文は不可です。
 
-【必須のJSON構造】
+要望：${prompt}
+
 [
   {
     "title": "本のタイトル",
     "author": "著者名",
-    "reason": "推薦理由。本の魅力が伝わるように60〜100文字程度で簡潔にまとめること。"
+    "reason": "60文字〜80文字の簡潔な推薦理由"
   }
 ]
 `;
 
-    // ★ここが最大の修正ポイント★
-    // Geminiに「application/json（データ形式）でしか返事をしてはいけない」とシステム制御をかけます
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.5-flash',
-      generationConfig: {
-        responseMimeType: "application/json", 
-      }
-    });
-
+    // 安定して動作する 1.5-flash モデルを使用
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     const result = await model.generateContent(strictPrompt);
-    const responseText = result.response.text();
+    let responseText = result.response.text();
+
+    // 万が一AIが余計な記号（```jsonなど）をつけてきた場合、強制的に削除してデータだけにする
+    responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
 
     return NextResponse.json({ text: responseText });
 
   } catch (error) {
-    console.error('Gemini API Error:', error);
-    return NextResponse.json(
-      { error: 'AIからの応答の取得に失敗しました。' },
-      { status: 500 }
-    );
+    console.error('API Error:', error);
+    return NextResponse.json({ error: 'AIエラー' }, { status: 500 });
   }
 }
