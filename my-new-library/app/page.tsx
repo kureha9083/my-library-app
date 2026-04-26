@@ -213,13 +213,13 @@ ${input}`;
       <div className="w-full max-w-4xl flex flex-col gap-8">
         
         <div className="text-center pt-8 pb-2">
-          <h1 className="text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-amber-600 to-emerald-700 mb-4 tracking-tight">
-            AI 図書館
-          </h1>
-          <p className="text-lg text-slate-600 font-bold">
-            定番からSNSの話題書まで、あなたに最適な「知」を提案します。
-          </p>
-        </div>
+  <h1 className="text-4xl font-extrabold text-slate-800 flex items-center justify-center gap-2">
+    MOMIJI <span className="text-sm block font-normal">〜 AI 図書館 〜</span>
+  </h1>
+  <p className="text-lg text-slate-600 font-bold">
+    定番からSNSの話題書まで、あなたに最適な「知」を提案します。
+  </p>
+</div>
 
         <AdBanner />
 
