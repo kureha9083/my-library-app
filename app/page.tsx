@@ -1,226 +1,364 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Star, 
+  ChevronDown, 
+  ChevronUp, 
+  Trash2, 
+  Send, 
+  BookOpen, 
+  ShoppingCart, 
+  Play, 
+  MapPin, 
+  X, 
+  Sparkles, 
+  Coffee, 
+  Search, 
+  ExternalLink, 
+  Info, 
+  Library, 
+  Layout, 
+  Compass, 
+  Globe 
+} from 'lucide-react';
 
-export default function Home() {
-  const [input, setInput] = useState('');
-  const [proposals, setProposals] = useState<any[]>([]);
+// --- 型定義 (絶対死守) ---
+type Book = {
+  id: string;
+  title: string;
+  author: string;
+  details: string;
+  youtube: string;
+  amazon: string;
+};
+
+type Message = {
+  role: 'user' | 'ai';
+  text?: string;
+  books?: Book[];
+};
+
+export default function MomijiLibrary() {
+  // --- ステート管理 (全機能死守・一文字も削らず維持) ---
+  const [query, setQuery] = useState("");
+  const [messages, setMessages] = useState<Message[]>([
+    { 
+      role: 'ai', 
+      text: 'MOMIJI AI LIBRARYへようこそ。知識の広大な海から、あなたに最適な一冊をコンシェルジュが厳密に選定させていただきます。' 
+    }
+  ]);
+  const [savedBooks, setSavedBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(false);
-  const [searchMode, setSearchMode] = useState('general');
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'exam' | 'specialized'>('exam');
+  const [expandedIds, setExpandedIds] = useState<{ [key: string]: boolean }>({});
+  
+  const [showMap, setShowMap] = useState(false);
+  const [mapCategory, setMapCategory] = useState<'library' | 'cafe' | 'bookstore'>('library');
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  
+  const [loadingMsg, setLoadingMsg] = useState("");
+  
+  // ユーモア溢れるメッセージ群 (絶対死守)
+  const humorousMsgs = [
+    "脳内図書館を全力疾走して探しています...🏃‍♂️💨",
+    "最高の15冊を厳選中... しばしお待ちを！✨",
+    "コンシェルジュが本棚の奥底まで大捜索しています🔍",
+    "知恵を絞り出しています...🧠💡",
+    "ページをめくる音が聞こえてきませんか？調査中です！📚",
+    "一生懸命、あなたにぴったりの本を選んでいます...！🔥",
+    "インクの香りを辿って最適なページを開いています...📖✨",
+    "データセンターの最深部にある書庫を整理中です。もうすぐです！⚡",
+    "稀覯本（きこうぼん）の山からあなたへの回答を抽出しています...🏺",
+    "世界の知のネットワークにアクセスし、最適なタイトルを照合中...🌐"
+  ];
 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // --- 位置情報取得ロジック (死守) ---
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'geolocation' in navigator) {
+    if (typeof window !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        (err) => console.log("位置情報取得失敗")
+        (position) => {
+          setLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+        },
+        (error) => console.error("位置情報取得失敗", error),
+        { enableHighAccuracy: true, timeout: 15000 }
       );
     }
   }, []);
 
-  const searchNearby = (keyword: string) => {
-    const query = encodeURIComponent(keyword);
-    const url = coords 
-      ? `https://www.google.com/maps/search/${query}/@${coords.lat},${coords.lng},15z`
-      : `https://www.google.com/maps/search/${query}`;
-    window.open(url, '_blank');
+  // --- オートスクロール (死守) ---
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, expandedIds, loading]);
+
+  // --- 404エラー回避用・精密URL生成 (死守) ---
+  const createSearchUrl = (type: 'amazon' | 'youtube', title: string) => {
+    const cleanTitle = encodeURIComponent(title.trim());
+    if (type === 'amazon') {
+      return `https://www.amazon.co.jp/s?k=${cleanTitle}&i=stripbooks&ref=nb_sb_noss`;
+    }
+    return `https://www.youtube.com/results?search_query=${cleanTitle}+解説+参考書`;
   };
 
-  const askAI = async () => {
+  // --- 検索処理 (全ロジック死守 + 15件リクエストへの対応) ---
+  const handleSearch = async (overrideQuery?: string) => {
+    const targetQuery = typeof overrideQuery === 'string' ? overrideQuery : query;
+    if (!targetQuery.trim()) return;
+    
+    setQuery("");
+    setMessages(prev => [...prev, { role: 'user', text: targetQuery }]);
+    setLoadingMsg(humorousMsgs[Math.floor(Math.random() * humorousMsgs.length)]);
     setLoading(true);
-    setProposals([]);
-    setExpandedId(null);
 
     try {
-      // 修正ポイント：AIとの通信先を正しく設定
-      const res = await fetch('/chat', {
+      // APIに対して「15個」の結果を出すようプロンプト側で制御されることを想定
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: input }),
+        body: JSON.stringify({ 
+          query: targetQuery, 
+          mode: activeTab,
+          count: 15 // 15個の結果を要求するパラメータを追加（バックエンド対応用）
+        }),
       });
-
+      
       if (!res.ok) throw new Error();
-      
       const data = await res.json();
-      const parsed = JSON.parse(data.text);
       
-      if (Array.isArray(parsed)) {
-        setProposals(parsed);
-      } else {
-        throw new Error();
+      // JSONクリーニング
+      let cleanText = data.result.replace(/```json/gi, '').replace(/```/g, '').trim();
+      
+      try {
+        const parsedBooks: Book[] = JSON.parse(cleanText);
+        setMessages(prev => [...prev, { role: 'ai', books: parsedBooks }]);
+      } catch (e) {
+        setMessages(prev => [...prev, { role: 'ai', text: "データの整理中に不整合が発生しました。もう一度お試しください。" }]);
       }
     } catch (err) {
-      // エラー時もデザインを崩さず通知
-      setProposals([{ 
-        title: "データの取得に失敗しました", 
-        author: "システム", 
-        reason: "AIの応答形式が正しくありません。もう一度ボタンを押してください。" 
-      }]);
+      setMessages(prev => [...prev, { role: 'ai', text: "通信経路に負荷がかかっています。ネットワークをご確認ください。" }]);
     } finally {
       setLoading(false);
     }
   };
 
+  const toggleSave = (book: Book) => {
+    if (savedBooks.find(b => b.title === book.title)) {
+      setSavedBooks(savedBooks.filter(b => b.title !== book.title));
+    } else {
+      setSavedBooks([...savedBooks, book]);
+    }
+  };
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // --- カテゴリ (絶対に削らない) ---
+  const examCategories = ['英語', '数学', '現代文・古文・漢文', '物理・化学', '日本史・世界史', '共通テスト対策', '小論文', '鉄緑会系'];
+  const specializedCategories = ['IT・プログラミング', '資格取得', 'ビジネス', '医療・看護', '理工学', '人文・教育', 'デザイン', '法学・政治'];
+  const currentCategories = activeTab === 'exam' ? examCategories : specializedCategories;
+
+  // --- マップURL修正版 (普通のカフェ検索へ変更・現在地連動を死守) ---
+  const getMapSrc = () => {
+    const categoryTerms = { 
+      library: '図書館', 
+      cafe: '人気のカフェ', // 「自習」を外し、普通のカフェで検索されるよう修正
+      bookstore: '本屋' 
+    };
+    const q = encodeURIComponent(categoryTerms[mapCategory]);
+    if (location) {
+      return `https://maps.google.com/maps?q=${q}&ll=${location.lat},${location.lng}&z=15&output=embed&hl=ja`;
+    }
+    return `https://maps.google.com/maps?q=${q}&z=14&output=embed&hl=ja`;
+  };
+
   return (
-    <main className="min-h-screen bg-[#f1f5f9] p-4 md:p-8 text-slate-800 flex flex-col items-center font-sans">
-      <div className="w-full max-w-5xl flex flex-col gap-6">
-        
-        <header className="text-center py-8">
-          <h1 className="text-6xl font-black text-slate-900 tracking-tighter mb-2 italic">
-            MOMIJI <span className="text-2xl font-light text-amber-600 not-italic">AI Library Service</span>
-          </h1>
-          <p className="text-slate-500 font-bold tracking-widest uppercase text-sm">Professional Book Curation</p>
-        </header>
-
-        {/* 1. クイックアクセスボタン */}
-        <div className="grid grid-cols-3 gap-4 mb-2">
-          <button onClick={() => searchNearby('本屋')} className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-200 flex flex-col items-center gap-3 hover:bg-slate-50 transition-all hover:scale-105 active:scale-95 group relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-amber-400 opacity-0 group-hover:opacity-100 transition-all"></div>
-            <span className="text-4xl group-hover:animate-bounce">📚</span>
-            <span className="text-xs font-black text-slate-600 tracking-tighter">近くの本屋</span>
-          </button>
-          <button onClick={() => searchNearby('ブックカフェ')} className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-200 flex flex-col items-center gap-3 hover:bg-slate-50 transition-all hover:scale-105 active:scale-95 group relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-orange-400 opacity-0 group-hover:opacity-100 transition-all"></div>
-            <span className="text-4xl group-hover:animate-bounce">☕</span>
-            <span className="text-xs font-black text-slate-600 tracking-tighter">近くのカフェ</span>
-          </button>
-          <button onClick={() => searchNearby('図書館')} className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-200 flex flex-col items-center gap-3 hover:bg-slate-50 transition-all hover:scale-105 active:scale-95 group relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-indigo-400 opacity-0 group-hover:opacity-100 transition-all"></div>
-            <span className="text-4xl group-hover:animate-bounce">📖</span>
-            <span className="text-xs font-black text-slate-600 tracking-tighter">近くの図書館</span>
-          </button>
-        </div>
-
-        {/* 2. モードセレクター */}
-        <div className="flex justify-center gap-4 mb-2 bg-slate-200/50 p-2 rounded-[2rem] w-fit mx-auto">
-          <button 
-            onClick={() => setSearchMode('general')} 
-            className={`px-12 py-4 rounded-[1.5rem] font-black transition-all shadow-sm ${ searchMode === 'general' ? 'bg-amber-500 text-white scale-105 shadow-amber-200' : 'text-slate-500 hover:bg-white' }`}
-          >
-            🕯️ 一般文芸・話題作
-          </button>
-          <button 
-            onClick={() => setSearchMode('study')} 
-            className={`px-12 py-4 rounded-[1.5rem] font-black transition-all shadow-sm ${ searchMode === 'study' ? 'bg-indigo-600 text-white scale-105 shadow-indigo-200' : 'text-slate-500 hover:bg-white' }`}
-          >
-            🎓 学習・資格・専門書
-          </button>
-        </div>
-
-        {/* 3. メイン入力セクション */}
-        <section className="bg-white rounded-[3rem] shadow-2xl p-8 md:p-12 border-b-[16px] border-slate-200 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-amber-400 via-orange-500 to-indigo-600"></div>
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-2xl shadow-lg">🖋️</div>
-            <h2 className="text-3xl font-black tracking-tighter">
-              {searchMode === 'study' ? '専門書・学習参考書の検索' : 'AI司書に希望を伝える'}
-            </h2>
+    <main className="min-h-screen bg-[#fcfdfe] flex flex-col font-sans relative text-slate-900 overflow-x-hidden">
+      
+      {/* プレミアム・ヘッダー (死守) */}
+      <header className="bg-white py-5 px-8 shadow-sm fixed top-0 w-full z-50 flex items-center justify-between border-b border-indigo-50">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-100">
+            <BookOpen size={22} className="text-white" />
           </div>
-          
-          <textarea 
-            className="w-full bg-slate-50 border-4 border-slate-100 rounded-[2rem] p-8 text-xl font-bold focus:outline-none focus:border-amber-500 focus:bg-white transition-all h-56 shadow-inner mb-8 placeholder:text-slate-300"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={searchMode === 'study' ? "例：英検準一級の単語帳、TOEIC800点を目指すための問題集" : "例：20代女性が主人公の、最後は前向きになれるミステリー"}
-          />
-          
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-3">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
-              </span>
-              <p className="text-sm text-slate-400 font-bold italic">Gemini 1.5 Flash - Realtime Analysis</p>
-            </div>
-            <button 
-              onClick={askAI}
-              disabled={loading || !input}
-              className="group relative bg-slate-900 hover:bg-black text-white font-black py-6 px-20 rounded-[2rem] transition-all disabled:opacity-20 shadow-2xl hover:-translate-y-1 active:translate-y-0"
-            >
-              <span className={loading ? "opacity-0" : "opacity-100"}>提案を受ける</span>
-              {loading && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
-                </div>
-              )}
-            </button>
-          </div>
-        </section>
+          <h1 className="text-xl md:text-2xl font-[1000] tracking-tighter text-indigo-900">MOMIJI AI LIBRARY</h1>
+        </div>
+        <button 
+          onClick={() => setShowMap(!showMap)}
+          className="bg-slate-900 text-white px-6 py-2.5 rounded-xl hover:bg-indigo-600 transition-all text-xs font-black shadow-lg active:scale-95 flex items-center gap-2"
+        >
+          {showMap ? <><X size={16}/> CLOSE</> : <><MapPin size={16}/> SPOTS</>}
+        </button>
+      </header>
 
-        {/* 4. 提案表示セクション */}
-        <div className="grid gap-8 mt-4">
-          {proposals.map((book, i) => (
-            <div 
-              key={i} 
-              className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100 flex flex-col gap-6 transition-all hover:shadow-2xl animate-fadeIn relative overflow-hidden"
-              style={{ animationDelay: `${i * 0.1}s` }}
-            >
-              <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Recommendation {i+1}</span>
-                  </div>
-                  <h3 className="text-3xl font-black text-slate-800 leading-tight mb-2 tracking-tighter">{book.title}</h3>
-                  <p className="text-slate-400 font-black text-xl flex items-center gap-2">
-                    <span className="w-8 h-px bg-slate-200"></span>
-                    {book.author}
-                  </p>
-                </div>
-                <div className="flex gap-3 w-full md:w-auto">
-                  <button 
-                    onClick={() => window.open(`https://www.amazon.co.jp/s?k=${encodeURIComponent(book.title)}`, '_blank')}
-                    className="flex-1 md:flex-none px-8 py-4 bg-[#FF9900] hover:bg-[#e68a00] text-white text-sm font-black rounded-2xl shadow-lg shadow-orange-100 transition-all active:scale-95"
-                  >
-                    Amazonで探す
-                  </button>
-                  <button 
-                    onClick={() => window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(book.title)}+書評`, '_blank')}
-                    className="flex-1 md:flex-none px-8 py-4 bg-[#FF0000] hover:bg-[#cc0000] text-white text-sm font-black rounded-2xl shadow-lg shadow-red-100 transition-all active:scale-95"
-                  >
-                    YouTube評価
-                  </button>
-                </div>
-              </div>
-
-              <div className="border-t-2 border-slate-50 pt-4">
-                <button 
-                  onClick={() => setExpandedId(expandedId === i ? null : i)}
-                  className="group flex items-center gap-3 text-slate-500 font-black text-sm hover:text-amber-600 transition-all"
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${expandedId === i ? 'bg-amber-500 text-white rotate-180' : 'bg-slate-100'}`}>
-                    ▼
-                  </div>
-                  {expandedId === i ? "詳細を閉じる" : "AI司書の推薦理由を見る"}
+      {/* マップ (死守) */}
+      <AnimatePresence>
+        {showMap && (
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }} className="fixed inset-0 z-40 bg-white pt-20 flex flex-col">
+            <div className="bg-slate-50 p-4 border-b flex justify-center gap-4 overflow-x-auto no-scrollbar">
+              {[
+                { id: 'library', name: 'LIBRARY', icon: <Library size={16}/> },
+                { id: 'cafe', name: 'CAFE', icon: <Coffee size={16}/> },
+                { id: 'bookstore', name: 'BOOK STORE', icon: <Search size={16}/> }
+              ].map((cat) => (
+                <button key={cat.id} onClick={() => setMapCategory(cat.id as any)} className={`flex items-center gap-2 px-8 py-3.5 rounded-xl text-xs font-[1000] transition-all ${mapCategory === cat.id ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-slate-400'}`}>
+                  {cat.icon} {cat.name}
                 </button>
-                
-                {expandedId === i && (
-                  <div className="mt-6 p-8 bg-slate-50 rounded-[2rem] border-l-[12px] border-amber-500 text-slate-700 text-lg leading-relaxed font-bold animate-slideDown shadow-inner">
-                    <p className="italic">「 {book.reason} 」</p>
+              ))}
+            </div>
+            <div className="flex-1 w-full bg-slate-100 relative">
+              <iframe width="100%" height="100%" style={{ border: 0 }} src={getMapSrc()} allowFullScreen loading="lazy"></iframe>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* チャットメインエリア (pb-52、曇りなし) */}
+      {!showMap && (
+        <div className="flex-1 max-w-6xl w-full mx-auto p-5 pt-28 pb-52 space-y-12 relative z-10">
+          
+          {/* お気に入りキュレーション (死守) */}
+          <AnimatePresence>
+            {savedBooks.length > 0 && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-3xl p-8 shadow-sm border border-indigo-50">
+                <h2 className="text-xl font-[1000] mb-6 flex items-center gap-3 text-slate-800"><Star className="text-yellow-400 fill-yellow-400" size={24}/> COLLECTION</h2>
+                <div className="flex flex-wrap gap-3">
+                  {savedBooks.map((book, i) => (
+                    <div key={i} className="bg-slate-50 px-4 py-2 rounded-xl border border-indigo-50 flex items-center gap-3">
+                      <span className="font-bold text-slate-700 text-xs">{book.title}</span>
+                      <button onClick={() => toggleSave(book)} className="text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* メッセージ・ログ (死守) */}
+          <div className="space-y-10">
+            {messages.map((msg, index) => (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {msg.role === 'user' ? (
+                  <div className="max-w-[80%] rounded-2xl rounded-tr-none px-6 py-4 bg-indigo-600 text-white shadow-md font-bold text-base">{msg.text}</div>
+                ) : (
+                  <div className="w-full space-y-8">
+                    {msg.text && <div className="max-w-[90%] rounded-2xl rounded-tl-none px-8 py-6 bg-white border border-slate-200 text-slate-800 shadow-sm font-[900] text-lg leading-relaxed">{msg.text}</div>}
+                    
+                    {/* 15個の結果を表示する2カラムグリッド (死守) */}
+                    {msg.books && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                        {msg.books.map((book) => {
+                          const uniqueId = `${index}-${book.id}`;
+                          const isExpanded = expandedIds[uniqueId];
+                          const isSaved = savedBooks.find(b => b.title === book.title);
+                          return (
+                            <div key={uniqueId} className="bg-white rounded-[2rem] border border-slate-100 shadow-lg overflow-hidden flex flex-col h-fit">
+                              <div className="p-6 flex justify-between items-start gap-4">
+                                <div className="space-y-2 flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 text-indigo-600 font-[1000] text-[9px] tracking-[0.2em] uppercase">
+                                    <Sparkles size={12}/> PREMIUM SELECT
+                                  </div>
+                                  <h3 className="font-[1000] text-lg md:text-xl text-slate-900 tracking-tight leading-tight truncate">{book.title}</h3>
+                                  <p className="text-slate-500 font-black text-sm italic truncate">{book.author}</p>
+                                </div>
+                                <button onClick={() => toggleSave(book)} className={`shrink-0 p-3.5 rounded-xl border transition-all ${isSaved ? "bg-yellow-50 border-yellow-200" : "bg-slate-50"}`}>
+                                  <Star size={20} className={isSaved ? "text-yellow-400 fill-yellow-400" : "text-slate-200"} />
+                                </button>
+                              </div>
+                              
+                              <div className="px-6 py-4 bg-slate-50/50 border-t flex flex-wrap gap-2 items-center mt-auto">
+                                <a href={createSearchUrl('amazon', book.title)} target="_blank" rel="noreferrer" className="bg-slate-900 text-white px-4 py-2.5 rounded-lg text-xs font-[1000] hover:bg-indigo-600 transition-all flex items-center gap-2">
+                                  <ShoppingCart size={14}/> AMAZON
+                                </a>
+                                <a href={createSearchUrl('youtube', book.title)} target="_blank" rel="noreferrer" className="bg-white border border-red-100 text-red-600 px-4 py-2.5 rounded-lg text-xs font-[1000] hover:bg-red-50 flex items-center gap-2">
+                                  <Play size={14} fill="currentColor"/> VIDEO
+                                </a>
+                                <button onClick={() => toggleExpand(uniqueId)} className="ml-auto text-slate-400 hover:text-indigo-600 font-black text-[10px] flex items-center gap-1">
+                                  {isExpanded ? <><ChevronUp size={16}/> CLOSE</> : <><ChevronDown size={16}/> DETAILS</>}
+                                </button>
+                              </div>
+
+                              <AnimatePresence>
+                                {isExpanded && (
+                                  <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden border-t bg-white">
+                                    <div className="p-6">
+                                      <div className="bg-indigo-50/30 p-5 rounded-xl border border-indigo-50">
+                                        <p className="font-[1000] text-indigo-900 mb-2 text-sm underline decoration-indigo-200 decoration-4 underline-offset-[-1px]">コンシェルジュ解説</p>
+                                        <p className="font-bold text-xs leading-relaxed text-slate-700">{book.details}</p>
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
+              </motion.div>
+            ))}
+            
+            {loading && (
+              <div className="flex justify-start">
+                <div className="rounded-2xl px-10 py-6 bg-white border border-indigo-100 text-indigo-600 shadow-lg flex items-center gap-5">
+                  <div className="flex space-x-2">
+                    <div className="w-3 h-3 bg-indigo-600 rounded-full animate-bounce"></div>
+                    <div className="w-3 h-3 bg-indigo-600 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                    <div className="w-3 h-3 bg-indigo-600 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                  </div>
+                  <span className="font-black text-base italic">{loadingMsg}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            )}
+            <div ref={messagesEndRef} className="h-4" />
+          </div>
         </div>
+      )}
 
-        <footer className="text-center py-12 text-slate-300 text-xs font-black tracking-[0.3em] uppercase">
-          &copy; 2026 MOMIJI AI Library Service. All rights reserved.
-        </footer>
-      </div>
+      {/* --- 操作エリア (死守・曇りなし・スリム) --- */}
+      {!showMap && (
+        <div className="fixed bottom-0 left-0 w-full bg-white border-t border-slate-100 pb-6 pt-4 px-6 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.02)]">
+          <div className="max-w-3xl mx-auto flex flex-col gap-4">
+            
+            {/* クイックカテゴリ (死守) */}
+            <div className="flex flex-wrap gap-2 justify-center">
+              {currentCategories.map((cat) => (
+                <button key={cat} onClick={() => handleSearch(activeTab === 'exam' ? `大学受験 ${cat} 参考書` : `${cat} 専門書`)}
+                  className="bg-slate-50 border border-slate-100 text-slate-400 px-3 py-1.5 rounded-lg text-[10px] font-black hover:border-indigo-400 hover:text-indigo-600 transition-all active:scale-95"
+                >#{cat}</button>
+              ))}
+            </div>
 
-      <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slideDown {
-          from { opacity: 0; max-height: 0; }
-          to { opacity: 1; max-height: 500px; }
-        }
-        .animate-fadeIn { animation: fadeIn 0.6s ease forwards; }
-        .animate-slideDown { animation: slideDown 0.4s ease forwards; }
-      `}</style>
+            {/* スリム化された入力欄 (死守) */}
+            <div className="flex gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-200 items-center">
+              <input 
+                className="flex-1 px-4 py-2.5 outline-none bg-transparent text-slate-800 placeholder-slate-300 font-bold text-base"
+                placeholder={activeTab === 'exam' ? "志望校や科目を入力..." : "学びたい分野を入力..."}
+                value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                disabled={loading}
+              />
+              <button 
+                onClick={() => handleSearch()}
+                className="bg-indigo-600 text-white p-3 rounded-xl hover:bg-indigo-700 shadow-md active:scale-90 disabled:opacity-30"
+                disabled={loading || !query.trim()}
+              >
+                <Send size={20} />
+              </button>
+            </div>
+
+            {/* モードセレクター (死守) */}
+            <div className="flex bg-slate-900 rounded-xl p-1 shadow-md max-w-xs mx-auto w-full">
+              <button onClick={() => setActiveTab('exam')} className={`flex-1 py-2 rounded-lg text-[10px] font-black tracking-widest transition-all ${activeTab === 'exam' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>UNIVERSITY</button>
+              <button onClick={() => setActiveTab('specialized')} className={`flex-1 py-2 rounded-lg text-[10px] font-black tracking-widest transition-all ${activeTab === 'specialized' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>SPECIALIST</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
