@@ -1,218 +1,105 @@
-"use client";
-import { useState, useEffect, useRef } from "react";
+'use client';
 
-type BookProposal = {
-  title: string;
-  short: string;
-  detail: string;
-};
+import { useState, useEffect } from 'react';
 
-// 広告の二重読み込みエラーを防止した安全なコンポーネント
-const AdBanner = () => {
-  const adRef = useRef<boolean>(false);
+export default function Home() {
+  // ==========================================
+  // 1. 状態管理（データの保存場所）
+  // ==========================================
+  const [input, setInput] = useState('');
+  const [proposals, setProposals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchMode, setSearchMode] = useState('general');
+  // ユーザーの現在地（緯度・経度）を保存する場所
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
+  // ==========================================
+  // 2. 現在地の自動取得（ページを開いた時に実行）
+  // ==========================================
   useEffect(() => {
-    if (!adRef.current) {
-      try {
-        const adsbygoogle = (window as any).adsbygoogle || [];
-        adsbygoogle.push({});
-        adRef.current = true;
-      } catch (err) {
-        console.error("AdSense error (Safe):", err);
-      }
+    // ブラウザが位置情報に対応しているか確認
+    if (typeof window !== 'undefined' && 'geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          // 取得成功：緯度と経度をセット
+          setCoords({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error("位置情報の取得に失敗しました（許可されていない等）:", error);
+        }
+      );
     }
   }, []);
 
-  return (
-    <div className="w-full text-center overflow-hidden flex flex-col items-center justify-center my-2 min-h-[110px]">
-      <span className="text-gray-400 text-xs font-bold mb-2 tracking-wider">SPONSORED LINK</span>
-      <ins className="adsbygoogle bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 text-sm font-bold"
-           style={{ display: "block", width: "100%", maxWidth: "728px", height: "90px" }}
-           data-ad-client="ca-pub-0000000000000000"
-           data-ad-slot="0000000000"
-           data-ad-format="auto"
-           data-full-width-responsive="true">
-        （ここにGoogle広告が自動表示されます）
-      </ins>
-    </div>
-  );
-};
-
-export default function Home() {
-  const [input, setInput] = useState("");
-  const [proposals, setProposals] = useState<BookProposal[]>([]);
-  const [expandedStates, setExpandedStates] = useState<{ [key: number]: boolean }>({});
-  
-  const [loading, setLoading] = useState(false);
-  const [loadingTipIndex, setLoadingTipIndex] = useState(0);
-  
-  const [searchMode, setSearchMode] = useState<"general" | "study">("general");
-  const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [locError, setLocError] = useState("");
-  const [favorites, setFavorites] = useState<{title: string, short: string}[]>([]);
-  const [historyTitles, setHistoryTitles] = useState<string[]>([]);
-
-  const loadingTips = [
-    "AI司書が巨大な書庫を検索しています...",
-    "YouTubeやSNSで絶賛されている話題の書をピックアップ中...",
-    "Amazonレビューや定番の良書を精査しています...",
-    "あなたに合うようバリエーションを調整中...",
-    "まもなくご提案の準備が整います..."
-  ];
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (loading) {
-      interval = setInterval(() => {
-        setLoadingTipIndex((prev) => (prev + 1) % loadingTips.length);
-      }, 2500);
+  // ==========================================
+  // 3. マップ検索機能（本屋・カフェ・図書館）
+  // ==========================================
+  const searchNearby = (keyword: string) => {
+    let url = "";
+    if (coords) {
+      // 緯度・経度が取得できている場合は、その地点を中心に検索（より正確）
+      url = `https://www.google.com/maps/search/${keyword}/@${coords.lat},${coords.lng},15z`;
     } else {
-      setLoadingTipIndex(0);
+      // 取得できていない場合はキーワード検索で代用
+      url = `https://www.google.com/maps/search/${keyword}+現在地`;
     }
-    return () => clearInterval(interval);
-  }, [loading]);
+    window.open(url, '_blank');
+  };
 
-  const askAI = async (isRetry = false) => {
-    if (!input) return;
+  // ==========================================
+  // 4. AIへの相談機能（Gemini APIとの通信）
+  // ==========================================
+  const askAI = async () => {
     setLoading(true);
-    
-    let currentHistory = historyTitles;
-    if (!isRetry) {
-      setProposals([]);
-      setExpandedStates({});
-      currentHistory = [];
-      setHistoryTitles([]);
-    } else {
-      currentHistory = [...historyTitles, ...proposals.map(p => p.title)];
-      setHistoryTitles(currentHistory);
-      setProposals([]);
-      setExpandedStates({});
-    }
-    
-    const count = searchMode === "study" ? 6 : 5;
-    
-    const categoryPrompt = searchMode === "study" 
-      ? "大学受験の参考書・問題集、または資格・検定の専門書。定番の良書や、YouTube・SNSで「神参考書」と絶賛されているものを優先してください。" 
-      : "一般的な小説、ビジネス書、エッセイなど。定番書だけでなく、SNS等で話題の本も含めてください。";
-
-    const excludePrompt = currentHistory.length > 0 
-      ? `\n※注意: 以下の本は既に提案済みです。別の本を提案してください。\n[除外リスト: ${currentHistory.join(", ")}]` 
-      : "";
-
-  const instruction = `以下の相談に対し、おすすめの本を「${count}冊」提案してください。
-${categoryPrompt}
-
-【重要条件】
-1. 王道の基本書やSNSで話題の本など、バリエーションを持たせてください。
-2. ユーザーの相談に「特定の本の名前」や「こだわりのキーワード」がある場合は、可能な限りそれを含めてください。ただし、見つからない場合や文脈に合わない場合は、無理に入れず最適な代替案を出してください。
-3. 【厳守】プログラムで読み込むため、出力は「必ず以下の形式のJSON配列のみ」にしてください。挨拶や言い訳などの文章は絶対に含めないでください。${excludePrompt}
-
-[
-  {
-    "title": "本のタイトルと著者名",
-    "short": "30文字程度の推薦理由",
-    "detail": "特徴やSNSでの評価（最大3文程度で簡潔に）"
-  }
-]
-
-相談内容:
-${input}`;
-
+    setProposals([]); // 前の結果をクリア
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: instruction }),
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: input, mode: searchMode }),
       });
-      
-      if (!res.ok) {
-        throw new Error(`サーバーからの応答がありませんでした。(ステータスコード: ${res.status})`);
-      }
-
-      const contentType = res.headers.get("content-type");
-      if (contentType && contentType.includes("text/html")) {
-        throw new Error("APIが想定外の応答（HTML）を返しました。タイムアウトの可能性があります。");
-      }
-
       const data = await res.json();
+      
+      // AIの返答（テキスト）を取得
       const text = data.text || data.error || "";
 
+      // JSON形式のデータを安全に取り出すための処理
       let cleanText = text.replace(/```json/gi, "").replace(/```/g, "").trim();
-      
       const startIndex = cleanText.indexOf('[');
       const endIndex = cleanText.lastIndexOf(']');
-
+      
       if (startIndex !== -1 && endIndex !== -1) {
         cleanText = cleanText.substring(startIndex, endIndex + 1);
+        // 余分なカンマなどを取り除く安全策
         cleanText = cleanText.replace(/,\s*\]/g, ']').replace(/,\s*\}/g, '}');
-
-        try {
-          const parsedData = JSON.parse(cleanText);
-          if (Array.isArray(parsedData) && parsedData.length > 0) {
-            setProposals(parsedData);
-          } else {
-            throw new Error("配列が空、または形式が異なります。");
-          }
-        } catch (parseError) {
-          console.error("JSON Parse Error:", parseError, "Raw Data:", cleanText);
-          setProposals([{ 
-            title: "データの整理に失敗しました", 
-            short: "AIの出力形式に乱れがありました。", 
-            detail: "お手数ですが、もう一度「検索」または「再検索」をお試しください。" 
-          }]);
+        
+        const parsedData = JSON.parse(cleanText);
+        if (Array.isArray(parsedData) && parsedData.length > 0) {
+          setProposals(parsedData);
+        } else {
+          console.error("AIからの提案が空です。");
         }
       } else {
-        throw new Error("JSONデータが見つかりませんでした。");
+        console.error("AIの返答からデータ形式を見つけられませんでした。");
       }
-
-    } catch (e: any) {
-      console.error("Fetch/Timeout Error:", e);
-      setProposals([{ 
-        title: "通信エラーが発生しました", 
-        short: "サーバーが混み合っているか、タイムアウトしました。", 
-        detail: `【エラー詳細】\n${e.message}\n\nAIの考える時間が長すぎた可能性があります。少し時間をおくか、提案数を減らすよう裏側で調整が必要かもしれません。` 
-      }]);
+    } catch (error) {
+      console.error("AI相談中にエラーが発生しました:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleDetail = (index: number) => {
-    setExpandedStates(prev => ({ ...prev, [index]: !prev[index] }));
-  };
-
-  const getLocation = () => {
-    setLocError("");
-    if (!navigator.geolocation) {
-      setLocError("位置情報は対応していません。");
-      return;
-    }
-    setLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setLoading(false);
-      },
-      (err) => {
-        console.error(err);
-        setLocError("位置情報の取得に失敗しました。スマホの設定で許可されているか確認してください。");
-        setLoading(false);
-      },
-      { timeout: 10000 }
-    );
-  };
-
-  const addFavorite = (book: BookProposal) => {
-    if (!favorites.some(f => f.title === book.title)) {
-      setFavorites([...favorites, { title: book.title, short: book.short }]);
-    }
-  };
-
+  // ==========================================
+  // 5. 画面の表示（UI）
+  // ==========================================
   return (
     <main className="min-h-screen bg-[#f8fafc] p-4 md:p-8 text-slate-800 flex flex-col items-center">
       <div className="w-full max-w-4xl flex flex-col gap-8">
 
-        {/* ① タイトル部分 */}
+        {/* ----------------- ヘッダー部分 ----------------- */}
         <div className="text-center pt-8 pb-2">
           <h1 className="text-4xl font-extrabold text-slate-800 flex items-center justify-center gap-2">
             MOMIJI <span className="text-sm block font-normal">〜 AI 図書館 〜</span>
@@ -222,23 +109,27 @@ ${input}`;
           </p>
         </div>
 
-        {/* ② タブ切り替え */}
+        {/* ----------------- モード切替タブ ----------------- */}
         <div className="flex justify-center gap-2">
           <button
             onClick={() => setSearchMode('general')}
-            className={`px-6 py-2 rounded-full font-bold transition-all ${searchMode === 'general' ? 'bg-white shadow-md text-amber-600' : 'text-slate-500'}`}
+            className={`px-6 py-2 rounded-full font-bold transition-all ${
+              searchMode === 'general' ? 'bg-white shadow-md text-amber-600' : 'text-slate-500'
+            }`}
           >
             🕯️ 一般相談
           </button>
           <button
             onClick={() => setSearchMode('study')}
-            className={`px-6 py-2 rounded-full font-bold transition-all ${searchMode === 'study' ? 'bg-white shadow-md text-indigo-600' : 'text-slate-500'}`}
+            className={`px-6 py-2 rounded-full font-bold transition-all ${
+              searchMode === 'study' ? 'bg-white shadow-md text-indigo-600' : 'text-slate-500'
+            }`}
           >
             🎓 学習・資格
           </button>
         </div>
 
-        {/* ③ メインの相談パネル（白い枠） */}
+        {/* ----------------- 相談パネル（白い枠） ----------------- */}
         <section className="bg-white shadow-xl rounded-3xl p-8 border-t-8 border-amber-500 transition-all">
           <h2 className="text-2xl font-extrabold text-slate-800 mb-6 flex items-center gap-2">
             {searchMode === 'study' ? (
@@ -257,7 +148,7 @@ ${input}`;
             />
             <div className="flex justify-end">
               <button
-                onClick={() => askAI()}
+                onClick={askAI}
                 disabled={loading || !input}
                 className="bg-[#d97706] hover:bg-[#b45309] text-white font-bold py-3 px-8 rounded-xl transition-all disabled:opacity-50"
               >
@@ -267,23 +158,29 @@ ${input}`;
           </div>
         </section>
 
-        {/* ④ 現在地検索ボタン（白い枠の「外側・下」に配置！） */}
+        {/* ----------------- 周辺検索ボタン（白枠の外側に配置） ----------------- */}
         <div className="flex flex-wrap gap-4 justify-center mt-2">
           <button
-            onClick={() => window.open(`https://www.google.com/maps/search/カフェ/`, '_blank')}
-            className="flex-1 min-w-[200px] max-w-[300px] bg-white border-2 border-slate-200 hover:border-orange-300 p-4 rounded-xl transition-all flex items-center justify-center gap-2 text-slate-600 font-bold shadow-sm"
+            onClick={() => searchNearby("本屋")}
+            className="flex-1 min-w-[140px] max-w-[250px] bg-white border-2 border-slate-200 hover:border-green-400 p-4 rounded-xl transition-all flex items-center justify-center gap-2 text-slate-600 font-bold shadow-sm"
           >
-            ☕ 近くのカフェを探す
+            📚 近くの本屋
           </button>
           <button
-            onClick={() => window.open(`https://www.google.com/maps/search/図書館/`, '_blank')}
-            className="flex-1 min-w-[200px] max-w-[300px] bg-white border-2 border-slate-200 hover:border-blue-300 p-4 rounded-xl transition-all flex items-center justify-center gap-2 text-slate-600 font-bold shadow-sm"
+            onClick={() => searchNearby("カフェ")}
+            className="flex-1 min-w-[140px] max-w-[250px] bg-white border-2 border-slate-200 hover:border-orange-300 p-4 rounded-xl transition-all flex items-center justify-center gap-2 text-slate-600 font-bold shadow-sm"
+          >
+            ☕ 近くのカフェ
+          </button>
+          <button
+            onClick={() => searchNearby("図書館")}
+            className="flex-1 min-w-[140px] max-w-[250px] bg-white border-2 border-slate-200 hover:border-blue-300 p-4 rounded-xl transition-all flex items-center justify-center gap-2 text-slate-600 font-bold shadow-sm"
           >
             📖 近くの図書館
           </button>
         </div>
 
-        {/* ⑤ AIからの提案結果を表示するエリア */}
+        {/* ----------------- AIの提案結果表示エリア ----------------- */}
         {proposals && proposals.length > 0 && (
           <div className="grid gap-6 md:grid-cols-2 mt-4">
             {proposals.map((book: any, i: number) => (
