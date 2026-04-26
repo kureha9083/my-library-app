@@ -7,10 +7,9 @@ export async function POST(req: Request) {
   try {
     const { prompt } = await req.json();
 
-    // AIにお喋りをさせないための厳格なプロンプト
     const strictPrompt = `
 おすすめの本を5冊提案してください。
-【厳守】JSONデータ以外は1文字も出力しないでください。挨拶も不要です。
+【厳守】JSONデータ以外は一切出力しないでください。挨拶も解説も不要です。
 [
   {
     "title": "タイトル",
@@ -18,7 +17,7 @@ export async function POST(req: Request) {
     "reason": "推薦理由(60-80文字)"
   }
 ]
-ユーザー要望: "${prompt}"`;
+要望: "${prompt}"`;
 
     const model = genAI.getGenerativeModel({
       model: 'gemini-1.5-flash',
