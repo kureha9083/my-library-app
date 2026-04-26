@@ -98,7 +98,9 @@ export default function MomijiLibrary() {
   const createSearchUrl = (type: 'amazon' | 'youtube', title: string) => {
     const cleanTitle = encodeURIComponent(title.trim());
     if (type === 'amazon') {
-      return `https://www.amazon.co.jp/s?k=${cleanTitle}&i=stripbooks&ref=nb_sb_noss`;
+      // ★ ここがアフィリエイト仕様に変更されています！
+      // 後でAmazonアソシエイトに登録したら、「あなたのトラッキングID-22」を自分のIDに変えてください。
+      return `https://www.amazon.co.jp/s?k=${cleanTitle}&i=stripbooks&tag=momiji9083-22&ref=nb_sb_noss`;
     }
     return `https://www.youtube.com/results?search_query=${cleanTitle}+解説+参考書`;
   };
