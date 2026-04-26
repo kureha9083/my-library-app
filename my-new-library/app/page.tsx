@@ -209,203 +209,92 @@ ${input}`;
   };
 
   return (
-    <main className="min-h-screen bg-[#f8fafc] p-4 md:p-8 text-slate-800 flex flex-col items-center font-sans">
+    <main className="min-h-screen bg-[#f8fafc] p-4 md:p-8 text-slate-800 flex flex-col items-center">
       <div className="w-full max-w-4xl flex flex-col gap-8">
-        
+
+        {/* ① タイトル部分 */}
         <div className="text-center pt-8 pb-2">
-  <h1 className="text-4xl font-extrabold text-slate-800 flex items-center justify-center gap-2">
-    MOMIJI <span className="text-sm block font-normal">〜 AI 図書館 〜</span>
-  </h1>
-  <p className="text-lg text-slate-600 font-bold">
-    定番からSNSの話題書まで、あなたに最適な「知」を提案します。
-  </p>
-</div>
+          <h1 className="text-4xl font-extrabold text-slate-800 flex items-center justify-center gap-2">
+            MOMIJI <span className="text-sm block font-normal">〜 AI 図書館 〜</span>
+          </h1>
+          <p className="text-lg text-slate-600 font-bold mt-2">
+            定番からSNSの話題書まで、あなたに最適な「知」を提案します。
+          </p>
+        </div>
 
-        <AdBanner />
-
-        <div className="flex justify-center gap-2 p-1 bg-slate-200 rounded-2xl w-fit mx-auto shadow-inner">
-          <button 
-            onClick={() => {setSearchMode("general"); setInput(""); setProposals([]); setHistoryTitles([]);}}
-            className={`px-8 py-3 rounded-xl font-bold transition-all ${searchMode === 'general' ? 'bg-white text-amber-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+        {/* ② タブ切り替え */}
+        <div className="flex justify-center gap-2">
+          <button
+            onClick={() => setSearchMode('general')}
+            className={`px-6 py-2 rounded-full font-bold transition-all ${searchMode === 'general' ? 'bg-white shadow-md text-amber-600' : 'text-slate-500'}`}
           >
             🕯️ 一般相談
           </button>
-          <button 
-            onClick={() => {setSearchMode("study"); setInput(""); setProposals([]); setHistoryTitles([]);}}
-            className={`px-8 py-3 rounded-xl font-bold transition-all ${searchMode === 'study' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+          <button
+            onClick={() => setSearchMode('study')}
+            className={`px-6 py-2 rounded-full font-bold transition-all ${searchMode === 'study' ? 'bg-white shadow-md text-indigo-600' : 'text-slate-500'}`}
           >
             🎓 学習・資格
           </button>
         </div>
-        
-        <section className={`bg-white shadow-xl rounded-3xl p-8 border-t-8 transition-colors ${searchMode === 'study' ? 'border-indigo-500' : 'border-amber-500'}`}>
-          <h2 className="text-2xl font-extrabold text-slate-800 mb-6 flex items-center gap-3">
+
+        {/* ③ メインの相談パネル（白い枠） */}
+        <section className="bg-white shadow-xl rounded-3xl p-8 border-t-8 border-amber-500 transition-all">
+          <h2 className="text-2xl font-extrabold text-slate-800 mb-6 flex items-center gap-2">
             {searchMode === 'study' ? (
-              <><span className="text-indigo-500">✍️</span> 必要な参考書の条件を入力</>
+              <><span className="text-indigo-500">🎓</span> 必要な参考書の条件を入力</>
             ) : (
               <><span className="text-amber-500">🖋️</span> 司書に相談する</>
             )}
           </h2>
-          {/* 現在地検索ボタン */}
-<div className="flex flex-wrap gap-2 mb-4">
-  <button
-    onClick={() => window.open(`https://www.google.com/maps/search/カフェ+読書+現在地`, '_blank')}
-    className="flex-1 min-w-[140px] bg-white border-2 border-slate-200 hover:border-orange-300 p-3 rounded-xl transition-all flex items-center justify-center gap-2 text-slate-600 font-bold"
-  >
-    ☕ 近くのカフェを探す
-  </button>
-  <button
-    onClick={() => window.open(`https://www.google.com/maps/search/図書館+現在地`, '_blank')}
-    className="flex-1 min-w-[140px] bg-white border-2 border-slate-200 hover:border-blue-300 p-3 rounded-xl transition-all flex items-center justify-center gap-2 text-slate-600 font-bold"
-  >
-    📖 近くの図書館
-  </button>
-</div>
 
           <div className="flex flex-col gap-4">
-            {searchMode === 'study' ? (
-              <textarea 
-                className="w-full border-2 border-slate-100 rounded-2xl p-5 text-lg font-medium text-slate-800 focus:outline-none focus:border-indigo-500 bg-slate-50 placeholder-slate-400 transition-all min-h-[180px]"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={"例：\n・ターゲット：大学受験（MARCHレベル）\n・科目：英語長文\n・こだわり：YouTubeで評判が良いもの、解説が丁寧なもの"}
-              />
-            ) : (
-              <input 
-                className="w-full border-2 border-slate-100 rounded-2xl p-5 text-lg font-medium text-slate-800 focus:outline-none focus:border-amber-500 bg-slate-50 transition-all"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && askAI(false)}
-                placeholder="いまの気分や、読みたい本のイメージを教えてください..."
-              />
-            )}
-            
-            <button 
-              onClick={() => askAI(false)} 
-              disabled={loading}
-              className={`relative overflow-hidden w-full md:w-fit self-end font-extrabold py-4 px-12 rounded-2xl transition-all disabled:opacity-80 shadow-lg text-lg text-white ${searchMode === 'study' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-amber-600 hover:bg-amber-700'}`}
-            >
-              {loading ? (
-                <span className="flex items-center gap-2 animate-pulse">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  検索しています...
-                </span>
-              ) : (
-                searchMode === 'study' ? "定番・話題の6冊を探す" : "定番・話題の5冊を探す"
-              )}
-            </button>
-            
-            {loading && (
-              <p className="text-right text-sm font-bold text-slate-500 animate-fade-in mt-2">
-                {loadingTips[loadingTipIndex]}
-              </p>
-            )}
+            <textarea
+              className="w-full border-2 border-slate-100 rounded-2xl p-5 text-lg font-medium focus:outline-none focus:border-amber-400 transition-colors resize-none h-32"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="いまの気分や、読みたい本のイメージを教えてください..."
+            />
+            <div className="flex justify-end">
+              <button
+                onClick={() => askAI()}
+                disabled={loading || !input}
+                className="bg-[#d97706] hover:bg-[#b45309] text-white font-bold py-3 px-8 rounded-xl transition-all disabled:opacity-50"
+              >
+                {loading ? "探しています..." : "定番・話題の5冊を探す"}
+              </button>
+            </div>
           </div>
         </section>
 
-        {proposals.length > 0 && (
-          <section className="bg-white shadow-xl rounded-3xl p-8 border-l-8 border-slate-200 relative animate-fade-in">
-            <h2 className="text-2xl font-extrabold text-slate-800 mb-8 flex items-center gap-3 border-b pb-4">
-              <span className={searchMode === 'study' ? 'text-indigo-500' : 'text-amber-500'}>📚</span> 
-              ユーザー評価の高い本を厳選
-            </h2>
-            
-            <div className="flex flex-col gap-8">
-              {proposals.map((book, index) => (
-                <div key={index} className={`p-6 md:p-8 rounded-3xl border transition-all ${searchMode === 'study' ? 'bg-indigo-50/50 border-indigo-100 hover:border-indigo-300' : 'bg-amber-50/50 border-amber-100 hover:border-amber-300'}`}>
-                  
-                  <h3 className={`text-2xl font-extrabold mb-3 ${searchMode === 'study' ? 'text-indigo-900' : 'text-amber-900'}`}>
-                    {book.title}
-                  </h3>
-                  <p className="text-lg text-slate-700 font-bold leading-relaxed mb-6">
-                    {book.short}
-                  </p>
+        {/* ④ 現在地検索ボタン（白い枠の「外側・下」に配置！） */}
+        <div className="flex flex-wrap gap-4 justify-center mt-2">
+          <button
+            onClick={() => window.open(`https://www.google.com/maps/search/カフェ/`, '_blank')}
+            className="flex-1 min-w-[200px] max-w-[300px] bg-white border-2 border-slate-200 hover:border-orange-300 p-4 rounded-xl transition-all flex items-center justify-center gap-2 text-slate-600 font-bold shadow-sm"
+          >
+            ☕ 近くのカフェを探す
+          </button>
+          <button
+            onClick={() => window.open(`https://www.google.com/maps/search/図書館/`, '_blank')}
+            className="flex-1 min-w-[200px] max-w-[300px] bg-white border-2 border-slate-200 hover:border-blue-300 p-4 rounded-xl transition-all flex items-center justify-center gap-2 text-slate-600 font-bold shadow-sm"
+          >
+            📖 近くの図書館
+          </button>
+        </div>
 
-                  <div className="flex flex-wrap gap-3">
-                    <button 
-                      onClick={() => toggleDetail(index)}
-                      className="bg-white hover:bg-slate-50 text-slate-700 border-2 border-slate-200 font-bold py-2 px-6 rounded-xl transition-all text-sm shadow-sm"
-                    >
-                      {expandedStates[index] ? "▲ 閉じる" : "▼ 評価の理由を読む"}
-                    </button>
-                    <a 
-                      href={`https://www.google.com/search?q=${encodeURIComponent(book.title)}`} 
-                      target="_blank" rel="noopener noreferrer"
-                      className="bg-white hover:bg-blue-50 text-blue-600 border-2 border-blue-200 font-bold py-2 px-6 rounded-xl transition-all text-sm shadow-sm"
-                    >
-                      🔍 検索
-                    </a>
-                    <a 
-                      href={`https://www.youtube.com/results?search_query=${encodeURIComponent(book.title)}`} 
-                      target="_blank" rel="noopener noreferrer"
-                      className="bg-white hover:bg-red-50 text-red-600 border-2 border-red-200 font-bold py-2 px-6 rounded-xl transition-all text-sm shadow-sm"
-                    >
-                      ▶️ YouTube
-                    </a>
-                    <button 
-                      onClick={() => addFavorite(book)}
-                      className="ml-auto bg-slate-800 hover:bg-black text-white font-bold py-2 px-6 rounded-xl shadow-md transition-all hover:-translate-y-1 text-sm"
-                    >
-                      🔖 保存
-                    </button>
-                  </div>
-
-                  {expandedStates[index] && (
-                    <div className="mt-6 pt-6 border-t border-slate-200/50 animate-fade-in text-slate-800 leading-loose whitespace-pre-wrap font-medium">
-                      {book.detail}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-10 flex justify-center border-t border-slate-100 pt-8">
-              <button 
-                onClick={() => askAI(true)} 
-                disabled={loading}
-                className="bg-white hover:bg-slate-100 text-slate-700 border-2 border-slate-300 font-extrabold py-4 px-10 rounded-full transition-all shadow-md flex items-center gap-3 text-lg disabled:opacity-50"
-              >
-                {loading ? "再検索中..." : "🔁 これら以外で別の候補を探す"}
-              </button>
-            </div>
-          </section>
+        {/* ⑤ AIからの提案結果を表示するエリア */}
+        {proposals && proposals.length > 0 && (
+          <div className="grid gap-6 md:grid-cols-2 mt-4">
+            {proposals.map((book: any, i: number) => (
+              <div key={i} className="bg-white p-6 rounded-2xl shadow-md border-l-4 border-amber-500">
+                <h3 className="font-bold text-xl mb-2">{book.title}</h3>
+                <p className="text-sm text-slate-500 mb-2">著者: {book.author}</p>
+                <p className="text-slate-700">{book.reason}</p>
+              </div>
+            ))}
+          </div>
         )}
-
-        <AdBanner />
-
-        {favorites.length > 0 && (
-          <section className="bg-white shadow-xl rounded-3xl p-8 border-t-8 border-rose-400">
-            <h2 className="text-2xl font-extrabold text-slate-800 mb-6 flex items-center gap-3">
-              <span className="text-rose-400">📋</span> 検討中のリスト
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {favorites.map((fav, index) => (
-                <div key={index} className="p-5 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col gap-4">
-                  <div className="font-extrabold text-slate-900">{fav.title}</div>
-                  <div className="flex gap-2">
-                    <a href={`https://www.amazon.co.jp/s?k=${encodeURIComponent(fav.title)}`} target="_blank" className="text-xs bg-amber-100 text-amber-800 px-3 py-1.5 rounded-lg font-bold">Amazon</a>
-                    <a href={`https://www.google.com/search?q=${encodeURIComponent(fav.title)}`} target="_blank" className="text-xs bg-blue-100 text-blue-800 px-3 py-1.5 rounded-lg font-bold">Web検索</a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section className="bg-white shadow-xl rounded-3xl p-8 border-t-8 border-emerald-500 flex flex-col items-center">
-          <h2 className="text-2xl font-extrabold text-slate-800 mb-6">📍 近くの図書館・書店を探す</h2>
-          {locError && <p className="text-red-500 font-bold mb-4">{locError}</p>}
-          <button onClick={getLocation} className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-4 px-10 rounded-2xl shadow-lg transition-all">現在地から探す</button>
-          {location && (
-            <div className="mt-8 flex gap-4 w-full">
-              <a href={`https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lng}+図書館`} target="_blank" rel="noopener noreferrer" className="flex-1 bg-slate-100 p-4 rounded-xl text-center font-bold border-2 border-transparent hover:border-emerald-500 transition-all">🏛️ 図書館</a>
-              <a href={`https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lng}+本屋`} target="_blank" rel="noopener noreferrer" className="flex-1 bg-slate-100 p-4 rounded-xl text-center font-bold border-2 border-transparent hover:border-emerald-500 transition-all">📚 本屋</a>
-            </div>
-          )}
-        </section>
 
       </div>
     </main>
