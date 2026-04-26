@@ -246,6 +246,21 @@ ${input}`;
               <><span className="text-amber-500">🖋️</span> 司書に相談する</>
             )}
           </h2>
+          {/* 現在地検索ボタン */}
+<div className="flex flex-wrap gap-2 mb-4">
+  <button
+    onClick={() => window.open(`https://www.google.com/maps/search/カフェ+読書+現在地`, '_blank')}
+    className="flex-1 min-w-[140px] bg-white border-2 border-slate-200 hover:border-orange-300 p-3 rounded-xl transition-all flex items-center justify-center gap-2 text-slate-600 font-bold"
+  >
+    ☕ 近くのカフェを探す
+  </button>
+  <button
+    onClick={() => window.open(`https://www.google.com/maps/search/図書館+現在地`, '_blank')}
+    className="flex-1 min-w-[140px] bg-white border-2 border-slate-200 hover:border-blue-300 p-3 rounded-xl transition-all flex items-center justify-center gap-2 text-slate-600 font-bold"
+  >
+    📖 近くの図書館
+  </button>
+</div>
 
           <div className="flex flex-col gap-4">
             {searchMode === 'study' ? (
