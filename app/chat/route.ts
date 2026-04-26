@@ -1,4 +1,3 @@
-TypeScript
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextResponse } from 'next/server';
 
@@ -6,40 +5,33 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(req: Request) {
   try {
-    const { prompt, mode } = await req.json();
-
-    const role = mode === 'study' 
-      ? 'あなたはプロの学習コンサルタントです。' 
-      : 'あなたはプロの図書館司書です。';
+    const { prompt } = await req.json();
 
     const strictPrompt = `
-${role}
 ユーザーの要望: "${prompt}"
-
-【絶対ルール】
-1. 返答は必ず以下のJSON配列形式のみ。
-2. 挨拶、解説、\`\`\`json などのマークダウン記法は一切禁止。
-3. 本を5冊提案。
-4. "reason"は必ず【60文字〜80文字】で簡潔に書くこと。
-
+上記に合うおすすめの本を5冊提案してください。
+必ず以下のJSON配列形式で出力してください。それ以外の文字は一切不要です。
 [
   {
-    "title": "タイトル",
+    "title": "本のタイトル",
     "author": "著者名",
-    "reason": "60〜80文字の推薦理由"
+    "reason": "60文字〜80文字の簡潔な推薦理由"
   }
 ]
 `;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    // ★ここが最強の解決策：AIの口を塞ぎ「絶対にデータしか返せない」ようにする設定
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      generationConfig: {
+        responseMimeType: "application/json",
+      }
+    });
+
     const result = await model.generateContent(strictPrompt);
-    let responseText = result.response.text();
+    const responseText = result.response.text();
 
-    // ★ 鉄壁の処理：AIが何を喋っても [ ] の中身だけを抽出する
-    const jsonMatch = responseText.match(/\[[\s\S]*\]/);
-    const finalData = jsonMatch ? jsonMatch[0] : responseText;
-
-    return NextResponse.json({ text: finalData });
+    return NextResponse.json({ text: responseText });
 
   } catch (error) {
     return NextResponse.json({ error: 'AIエラー' }, { status: 500 });
