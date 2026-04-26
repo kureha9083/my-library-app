@@ -30,11 +30,12 @@ export default function Home() {
   // 3. 外部連携・検索ロジック
   // ==========================================
   
-  // マップ検索
+  // マップ検索（URLの破損を修正）
   const searchNearby = (keyword: string) => {
+    const query = encodeURIComponent(keyword);
     const url = coords 
-      ? `http://googleusercontent.com/maps.google.com/9{keyword}/@${coords.lat},${coords.lng},15z`
-      : `http://googleusercontent.com/maps.google.com/9{keyword}+現在地`;
+      ? `https://www.google.com/maps/search/${query}/@${coords.lat},${coords.lng},15z`
+      : `https://www.google.com/maps/search/${query}+現在地`;
     window.open(url, '_blank');
   };
 
@@ -49,7 +50,7 @@ export default function Home() {
   };
 
   // ==========================================
-  // 4. AI相談ロジック（堅牢版）
+  // 4. AI相談ロジック（より堅牢なパース処理へアップデート）
   // ==========================================
   const askAI = async () => {
     setLoading(true);
@@ -68,18 +69,23 @@ export default function Home() {
       const data = await res.json();
       const text = data.text || "";
 
-      // JSON抽出処理
-      let cleanText = text.replace(/```json/gi, "").replace(/```/g, "").trim();
-      const start = cleanText.indexOf('[');
-      const end = cleanText.lastIndexOf(']');
-
-      if (start !== -1 && end !== -1) {
-        const jsonStr = cleanText.substring(start, end + 1);
-        const parsed = JSON.parse(jsonStr);
-        setProposals(parsed);
-      } else {
-        // 万が一JSONじゃなかった場合の救済措置
-        setProposals([{ title: "提案が見つかりました", author: "AI司書", reason: text }]);
+      // JSON抽出処理（正規表現で配列部分のみを確実に取り出すよう強化）
+      try {
+        const jsonMatch = text.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          setProposals(parsed);
+        } else {
+          throw new Error("JSON形式が見つかりません");
+        }
+      } catch (parseError) {
+        // パース失敗時のフォールバック処理
+        console.error("JSONパースエラー:", parseError);
+        setProposals([{ 
+          title: "提案の形式を整えられませんでした", 
+          author: "AI司書", 
+          reason: `以下のテキストを参考にしてください:\n\n${text}` 
+        }]);
       }
     } catch (err: any) {
       setError("申し訳ありません。検索中にエラーが発生しました。");
@@ -189,8 +195,8 @@ export default function Home() {
             <div key={i} className="bg-white rounded-3xl p-6 shadow-md border border-slate-100 flex flex-col gap-4 transition-all hover:shadow-xl">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="text-2xl font-black text-slate-800 mb-1">{book.title}</h3>
-                  <p className="text-slate-500 font-bold">著者: {book.author}</p>
+                  <h3 className="text-2xl font-black text-slate-800 mb-1">{book.title || "タイトル不明"}</h3>
+                  <p className="text-slate-500 font-bold">著者: {book.author || "著者不明"}</p>
                 </div>
                 <div className="flex gap-2">
                   <button 
@@ -217,9 +223,10 @@ export default function Home() {
                   {expandedId === i ? "▲ 詳細を閉じる" : "▼ AI司書の推薦理由を見る"}
                 </button>
                 
+                {/* 修正ポイント： whitespace-pre-wrap を追加して改行を正しく表示 */}
                 {expandedId === i && (
-                  <div className="mt-4 p-5 bg-slate-50 rounded-2xl border-l-4 border-amber-500 text-slate-700 leading-relaxed font-medium animate-fadeIn">
-                    {book.reason}
+                  <div className="mt-4 p-5 bg-slate-50 rounded-2xl border-l-4 border-amber-500 text-slate-700 leading-relaxed font-medium animate-fadeIn whitespace-pre-wrap">
+                    {book.reason || "推薦理由が提供されていません。"}
                   </div>
                 )}
               </div>
