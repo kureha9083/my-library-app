@@ -1,43 +1,38 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { NextResponse } from "next/server";
+
+// APIキーの取得
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function POST(req: Request) {
   try {
-    // 1. フロントエンドからのデータを受け取る
-    const body = await req.json();
-    const { prompt } = body;
+    const { prompt, mode } = await req.json();
 
-    if (!prompt) {
-      return NextResponse.json({ error: "プロンプトが空です" }, { status: 400 });
-    }
+    // 🌟 AIへの「絶対のルール」を定義
+    const systemPrompt = `
+あなたはプロの司書です。ユーザーの入力に対して、必ず条件に合う本や参考書を「厳選して5冊」提案してください。
+【絶対条件】出力は必ず以下のJSON配列の形式のみで行うこと。前後の挨拶、試験の解説、Markdown記号などは一切含めないでください。
 
-    // 2. APIキーの存在チェック
-    const apiKey = process.env.GEMINI_API_KEY; // ここはご自身の環境変数名に合わせてください（例: GOOGLE_GEMINI_API_KEY の場合もあります）
-    if (!apiKey) {
-      console.error("❌ APIキーが設定されていません。 .env.local を確認してください。");
-      return NextResponse.json({ error: "APIキーがサーバーに設定されていません" }, { status: 500 });
-    }
+[
+  {
+    "title": "本のタイトル（正確に）",
+    "author": "著者名（または出版社）",
+    "reason": "なぜこの本をおすすめするのか、3〜4行程度の簡潔で読みやすい理由"
+  }
+]
 
-    // 3. AIの初期化と生成
-    const genAI = new GoogleGenerativeAI(apiKey);
-    // 最新の推奨モデルに設定（gemini-1.5-flash は高速で安定しています）
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); 
+ユーザーの入力: ${prompt}
+検索モード: ${mode === 'study' ? '学習・資格・専門書' : '一般文芸・話題作'}
+`;
 
-    console.log("🤖 AIにリクエストを送信中...");
-    const result = await model.generateContent(prompt);
+    // ⚠️ ご指定の gemini-2.5 に修正
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5" });
+    const result = await model.generateContent(systemPrompt);
     const text = result.response.text();
-    console.log("✅ AIから応答がありました");
 
-    // 4. 結果をフロントエンドに返す
-    return NextResponse.json({ text });
+    return Response.json({ text });
 
-  } catch (error: any) {
-    // 🌟 ターミナルに「本当のエラー原因」を赤字で出力する
-    console.error("❌ [API Route Error] 詳細:", error.message || error);
-    
-    return NextResponse.json(
-      { error: "AIの処理中にエラーが発生しました", details: error.message },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error("AI通信エラー:", error);
+    return Response.json({ error: "通信に失敗しました" }, { status: 500 });
   }
 }
