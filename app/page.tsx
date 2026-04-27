@@ -1,5 +1,5 @@
 "use client";
-
+import Script from 'next/script';
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -315,18 +315,19 @@ export default function MomijiLibrary() {
               </div>
             )}
             <div ref={messagesEndRef} className="h-4" />
-            {/* 👇ここから広告エリア👇 */}
-          <div className="my-8 flex flex-col items-center justify-center w-full">
-            <p className="text-xs text-slate-400 mb-2 font-bold">スポンサーリンク</p>
-            <div dangerouslySetInnerHTML={{ __html: `
-              <script src="https://adm.shinobi.jp/s/d9e0e64f2b66fbd17fee8f0414f15dcf"></script>
-            ` }} />
-          </div>
-          {/* 👆ここまで広告エリア👆 */}
+           
           </div>
         </div>
       )}
-
+{/* 👇ここから広告エリア👇 */}
+          <div className="my-8 flex flex-col items-center justify-center w-full">
+            <p className="text-xs text-slate-400 mb-2 font-bold">スポンサーリンク</p>
+            <Script 
+              src="https://adm.shinobi.jp/s/d9e0e64f2b66fbd17fee8f0414f15dcf" 
+              strategy="lazyOnload" 
+            />
+          </div>
+          {/* 👆ここまで広告エリア👆 */}
       {/* --- 操作エリア (死守・曇りなし・スリム) --- */}
       {!showMap && (
         <div className="fixed bottom-0 left-0 w-full bg-white border-t border-slate-100 pb-6 pt-4 px-6 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.02)]">
