@@ -63,7 +63,7 @@ export default function MomijiLibrary() {
   // ユーモア溢れるメッセージ群 (絶対死守)
   const humorousMsgs = [
     "脳内図書館を全力疾走して探しています...🏃‍♂️💨",
-    "最高の15冊を厳選中... しばしお待ちを！✨",
+    "最高の8冊を厳選中... しばしお待ちを！✨", // ★15から8に変更しました
     "コンシェルジュが本棚の奥底まで大捜索しています🔍",
     "知恵を絞り出しています...🧠💡",
     "ページをめくる音が聞こえてきませんか？調査中です！📚",
@@ -98,14 +98,12 @@ export default function MomijiLibrary() {
   const createSearchUrl = (type: 'amazon' | 'youtube', title: string) => {
     const cleanTitle = encodeURIComponent(title.trim());
     if (type === 'amazon') {
-      // ★ ここがアフィリエイト仕様に変更されています！
-      // 後でAmazonアソシエイトに登録したら、「あなたのトラッキングID-22」を自分のIDに変えてください。
       return `https://www.amazon.co.jp/s?k=${cleanTitle}&i=stripbooks&tag=momiji9083-22&ref=nb_sb_noss`;
     }
     return `https://www.youtube.com/results?search_query=${cleanTitle}+解説+参考書`;
   };
 
-  // --- 検索処理 (全ロジック死守 + 15件リクエストへの対応) ---
+  // --- 検索処理 (全ロジック死守 + 8件リクエストへの対応) ---
   const handleSearch = async (overrideQuery?: string) => {
     const targetQuery = typeof overrideQuery === 'string' ? overrideQuery : query;
     if (!targetQuery.trim()) return;
@@ -116,14 +114,13 @@ export default function MomijiLibrary() {
     setLoading(true);
 
     try {
-      // APIに対して「15個」の結果を出すようプロンプト側で制御されることを想定
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           query: targetQuery, 
           mode: activeTab,
-          count: 15 // 15個の結果を要求するパラメータを追加（バックエンド対応用）
+          count: 8 // ★15個から8個に変更しました（速度改善のため）
         }),
       });
       
@@ -167,7 +164,7 @@ export default function MomijiLibrary() {
   const getMapSrc = () => {
     const categoryTerms = { 
       library: '図書館', 
-      cafe: '人気のカフェ', // 「自習」を外し、普通のカフェで検索されるよう修正
+      cafe: '人気のカフェ', 
       bookstore: '本屋' 
     };
     const q = encodeURIComponent(categoryTerms[mapCategory]);
@@ -249,7 +246,7 @@ export default function MomijiLibrary() {
                   <div className="w-full space-y-8">
                     {msg.text && <div className="max-w-[90%] rounded-2xl rounded-tl-none px-8 py-6 bg-white border border-slate-200 text-slate-800 shadow-sm font-[900] text-lg leading-relaxed">{msg.text}</div>}
                     
-                    {/* 15個の結果を表示する2カラムグリッド (死守) */}
+                    {/* 8個の結果を表示する2カラムグリッド (死守) */}
                     {msg.books && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
                         {msg.books.map((book) => {
