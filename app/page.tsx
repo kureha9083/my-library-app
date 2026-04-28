@@ -319,15 +319,15 @@ export default function MomijiLibrary() {
           </div>
         </div>
       )}
-{/* 👇ここから広告エリア👇 */}
-          <div className="my-8 flex flex-col items-center justify-center w-full">
-            <p className="text-xs text-slate-400 mb-2 font-bold">スポンサーリンク</p>
-            <Script 
-              src="https://adm.shinobi.jp/s/d9e0e64f2b66fbd17fee8f0414f15dcf" 
-              strategy="lazyOnload" 
-            />
+{/* 👇ここからAmazon広告エリア👇 */}
+          <div className="my-10 p-6 border-2 border-dashed border-blue-200 rounded-xl bg-blue-50 flex flex-col items-center justify-center w-full">
+            <p className="text-sm text-blue-600 mb-4 font-bold">📖 読書をもっと楽しく！おすすめサービス</p>
+            
+            <div dangerouslySetInnerHTML={{ __html: `
+              <a href="https://px.a8.net/svt/ejp?a8mat=4B1VU0+8RJREA+4EKC+631SX" rel="nofollow"><img border="0" width="600" height="100" alt="" src="https://www21.a8.net/svt/bgt?aid=260428392530&wid=001&eno=01&mid=s00000020550001022000&mc=1"></a><img border="0" width="1" height="1" src="https://www17.a8.net/0.gif?a8mat=4B1VU0+8RJREA+4EKC+631SX" alt="">
+            ` }} />
           </div>
-          {/* 👆ここまで広告エリア👆 */}
+          {/* 👆ここまで👆 */}
       {/* --- 操作エリア (死守・曇りなし・スリム) --- */}
       {!showMap && (
         <div className="fixed bottom-0 left-0 w-full bg-white border-t border-slate-100 pb-6 pt-4 px-6 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.02)]">
