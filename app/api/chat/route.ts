@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     
     // page.tsx から送られてきた count (8) を受け取る
     const { query, mode, count } = await req.json();
-    const numBooks = count || 8; 
+    const numBooks = count || 5; 
 
     // 最新の安定最速モデルを指定
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     // AIへの指示をさらに強力に念押し
     const systemPrompt = `
       あなたは図書コンシェルジュです。
-      ユーザーの要望に合う本を【厳密に${numBooks}冊】、以下のJSON形式のみで出力してください。
+      ユーザーの要望に合う本を【厳選しなくてもいいから${numBooks}冊】、以下のJSON形式のみで出力してください。
       数が${numBooks}冊に満たないことは絶対に避けてください。必ず${numBooks}冊出力してください。
       
       【重要】 \`\`\`json などのマークダウン記号は絶対に書かないでください。純粋な [ ] で囲まれたデータだけを出力してください。
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
           "id": "1",
           "title": "本のタイトル",
           "author": "著者名",
-          "details": "内容の簡潔な要約",
+          "details": "内容の簡潔な要約(50文字程度)",
           "youtube": "https://www.youtube.com/results?search_query=本のタイトル+書評",
           "amazon": "https://www.amazon.co.jp/s?k=本のタイトル"
         }

@@ -63,7 +63,7 @@ export default function MomijiLibrary() {
   // ユーモア溢れるメッセージ群 (絶対死守)
   const humorousMsgs = [
     "脳内図書館を全力疾走して探しています...🏃‍♂️💨",
-    "最高の8冊を厳選中... しばしお待ちを！✨", // ★15から8に変更しました
+    "最高の5冊を厳選中... しばしお待ちを！✨", // ★15から5に変更しました
     "コンシェルジュが本棚の奥底まで大捜索しています🔍",
     "知恵を絞り出しています...🧠💡",
     "ページをめくる音が聞こえてきませんか？調査中です！📚",
@@ -103,11 +103,11 @@ export default function MomijiLibrary() {
     return `https://www.youtube.com/results?search_query=${cleanTitle}+解説+参考書`;
   };
 
-  // --- 検索処理 (全ロジック死守 + 8件リクエストへの対応) ---
-  const handleSearch = async (overrideQuery?: string) => {
+  // --- 検索処理 (全ロジック死守 + 5件リクエストへの対応) ---
+  async function handleSearch(overrideQuery?: string) {
     const targetQuery = typeof overrideQuery === 'string' ? overrideQuery : query;
     if (!targetQuery.trim()) return;
-    
+
     setQuery("");
     setMessages(prev => [...prev, { role: 'user', text: targetQuery }]);
     setLoadingMsg(humorousMsgs[Math.floor(Math.random() * humorousMsgs.length)]);
@@ -117,19 +117,19 @@ export default function MomijiLibrary() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          query: targetQuery, 
+        body: JSON.stringify({
+          query: targetQuery,
           mode: activeTab,
-          count: 8 // ★15個から8個に変更しました（速度改善のため）
+          count: 5 // ★8個から5個に変更しました（速度改善のため）
         }),
       });
-      
+
       if (!res.ok) throw new Error();
       const data = await res.json();
-      
+
       // JSONクリーニング
       let cleanText = data.result.replace(/```json/gi, '').replace(/```/g, '').trim();
-      
+
       try {
         const parsedBooks: Book[] = JSON.parse(cleanText);
         setMessages(prev => [...prev, { role: 'ai', books: parsedBooks }]);
@@ -141,7 +141,7 @@ export default function MomijiLibrary() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const toggleSave = (book: Book) => {
     if (savedBooks.find(b => b.title === book.title)) {
@@ -163,9 +163,9 @@ export default function MomijiLibrary() {
   // --- マップURL修正版 (普通のカフェ検索へ変更・現在地連動を死守) ---
   const getMapSrc = () => {
     const categoryTerms = { 
-      library: '図書館', 
-      cafe: '人気のカフェ', 
-      bookstore: '本屋' 
+      library: '近くの図書館', 
+      cafe: '近くのカフェ', 
+      bookstore: '近くの本屋' 
     };
     const q = encodeURIComponent(categoryTerms[mapCategory]);
     if (location) {
