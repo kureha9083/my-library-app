@@ -191,7 +191,9 @@ export default function MomijiLibrary() {
     <div style="border: 1px dashed #cbd5e1; padding: 20px; border-radius: 8px; background-color: #f8fafc;">
       <p style="font-size: 12px; color: #64748b; margin-bottom: 8px;">スポンサーリンク</p>
       <div style="color: #94a3b8; font-size: 13px;">
-        Amazonプライムのバナー（承認待ち）
+        Amazonプライムのバナー<a href="https://px.a8.net/svt/ejp?a8mat=4B1VU0+8RJREA+4EKC+631SX" rel="nofollow">
+<img border="0" width="600" height="100" alt="" src="https://www20.a8.net/svt/bgt?aid=260428392530&wid=001&eno=01&mid=s00000020550001022000&mc=1"></a>
+<img border="0" width="1" height="1" src="https://www19.a8.net/0.gif?a8mat=4B1VU0+8RJREA+4EKC+631SX" alt="">
       </div>
     </div>
   ` }} />
