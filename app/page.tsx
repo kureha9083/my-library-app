@@ -178,13 +178,25 @@ export default function MomijiLibrary() {
   return (
     <main className="min-h-screen bg-[#fcfdfe] flex flex-col font-sans relative text-slate-900 overflow-x-hidden">
       
-      {/* プレミアム・ヘッダー (死守) */}
+     {/* プレミアム・ヘッダー (死守) */}
       <header className="bg-white py-5 px-8 shadow-sm fixed top-0 w-full z-50 flex items-center justify-between border-b border-indigo-50">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-100">
             <BookOpen size={22} className="text-white" />
           </div>
           <h1 className="text-xl md:text-2xl font-[1000] tracking-tighter text-indigo-900">MOMIJI AI LIBRARY</h1>
+
+         {/* --- A8広告エリア：タイトルの横に配置 --- */}
+<div className="hidden lg:flex items-center ml-4 h-10 overflow-hidden">
+  <div className="scale-[0.4] origin-left">
+    <a href="https://px.a8.net/svt/ejp?a8mat=4B1VU0+8RJREA+4EKC+63OY9" rel="nofollow">
+      <img src="https://www27.a8.net/svt/bgt?aid=260428392530&wid=001&eno=01&mid=s00000020550001025000&mc=1" width="300" height="250" alt="" style={{ border: 0 }} />
+    </a>
+    <img src="https://www16.a8.net/0.gif?a8mat=4B1VU0+8RJREA+4EKC+63OY9" width="1" height="1" alt="" style={{ border: 0 }} />
+  </div>
+</div>
+{/* --- ここまで --- */}
+
         </div>
         <button 
           onClick={() => setShowMap(!showMap)}
