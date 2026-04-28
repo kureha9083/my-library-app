@@ -186,14 +186,14 @@ export default function MomijiLibrary() {
           </div>
           <h1 className="text-xl md:text-2xl font-[1000] tracking-tighter text-indigo-900">MOMIJI AI LIBRARY</h1>
           {/* 広告エリア */}
-<div className="w-full max-w-md mx-auto my-4 text-center">
+<div className="w-full text-center my-6 relative z-0"> {/* z-0 で浮き上がりを防止 */}
   <div dangerouslySetInnerHTML={{ __html: `
     <div style="border: 1px dashed #cbd5e1; padding: 20px; border-radius: 8px; background-color: #f8fafc;">
       <p style="font-size: 12px; color: #64748b; margin-bottom: 8px;">スポンサーリンク</p>
       <div style="color: #94a3b8; font-size: 13px;">
-        Amazonプライムのバナー<a href="https://px.a8.net/svt/ejp?a8mat=4B1VU0+8RJREA+4EKC+631SX" rel="nofollow">
-<img border="0" width="600" height="100" alt="" src="https://www20.a8.net/svt/bgt?aid=260428392530&wid=001&eno=01&mid=s00000020550001022000&mc=1"></a>
-<img border="0" width="1" height="1" src="https://www19.a8.net/0.gif?a8mat=4B1VU0+8RJREA+4EKC+631SX" alt="">
+        Amazonプライムのバナー<a href="https://px.a8.net/svt/ejp?a8mat=4B1VU0+8RJREA+4EKC+63OY9" rel="nofollow">
+<img border="0" width="300" height="250" alt="" src="https://www27.a8.net/svt/bgt?aid=260428392530&wid=001&eno=01&mid=s00000020550001025000&mc=1"></a>
+<img border="0" width="1" height="1" src="https://www16.a8.net/0.gif?a8mat=4B1VU0+8RJREA+4EKC+63OY9" alt="">
       </div>
     </div>
   ` }} />
