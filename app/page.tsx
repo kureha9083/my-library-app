@@ -49,17 +49,6 @@ export default function MomijiLibrary() {
       text: 'MOMIJI AI LIBRARYへようこそ。知識の広大な海から、あなたに最適な一冊をコンシェルジュが厳密に選定させていただきます。' 
     }
   ]);
-  {/* 広告エリア */}
-<div className="w-full max-w-md mx-auto my-4 text-center">
-  <div dangerouslySetInnerHTML={{ __html: `
-    <div style="border: 1px dashed #cbd5e1; padding: 20px; border-radius: 8px; background-color: #f8fafc;">
-      <p style="font-size: 12px; color: #64748b; margin-bottom: 8px;">スポンサーリンク</p>
-      <div style="color: #94a3b8; font-size: 13px;">
-        Amazonプライムのバナー（承認待ち）
-      </div>
-    </div>
-  ` }} />
-</div>
   const [savedBooks, setSavedBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'exam' | 'specialized'>('exam');
@@ -98,7 +87,8 @@ export default function MomijiLibrary() {
         { enableHighAccuracy: true, timeout: 15000 }
       );
     }
-  }, []);
+  }, 
+  []);
 
   // --- オートスクロール (死守) ---
   useEffect(() => {
@@ -176,7 +166,7 @@ export default function MomijiLibrary() {
     const categoryTerms = { 
       library: '近くの図書館', 
       cafe: '近くのカフェ', 
-      bookstore: '近くの本屋' 
+      bookstore: '近くの本屋' ,
     };
     const q = encodeURIComponent(categoryTerms[mapCategory]);
     if (location) {
@@ -195,6 +185,17 @@ export default function MomijiLibrary() {
             <BookOpen size={22} className="text-white" />
           </div>
           <h1 className="text-xl md:text-2xl font-[1000] tracking-tighter text-indigo-900">MOMIJI AI LIBRARY</h1>
+          {/* 広告エリア */}
+<div className="w-full max-w-md mx-auto my-4 text-center">
+  <div dangerouslySetInnerHTML={{ __html: `
+    <div style="border: 1px dashed #cbd5e1; padding: 20px; border-radius: 8px; background-color: #f8fafc;">
+      <p style="font-size: 12px; color: #64748b; margin-bottom: 8px;">スポンサーリンク</p>
+      <div style="color: #94a3b8; font-size: 13px;">
+        Amazonプライムのバナー（承認待ち）
+      </div>
+    </div>
+  ` }} />
+</div>
         </div>
         <button 
           onClick={() => setShowMap(!showMap)}
