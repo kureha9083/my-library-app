@@ -186,17 +186,28 @@ export default function MomijiLibrary() {
           </div>
           <h1 className="text-xl md:text-2xl font-[1000] tracking-tighter text-indigo-900">MOMIJI AI LIBRARY</h1>
 
-         {/* --- A8広告エリア：タイトルの横に配置 --- */}
-<div className="hidden lg:flex items-center ml-4 h-10 overflow-hidden">
-  <div className="scale-[0.4] origin-left">
-    <a href="https://px.a8.net/svt/ejp?a8mat=4B1VU0+8RJREA+4EKC+63OY9" rel="nofollow">
-      <img src="https://www27.a8.net/svt/bgt?aid=260428392530&wid=001&eno=01&mid=s00000020550001025000&mc=1" width="300" height="250" alt="" style={{ border: 0 }} />
-    </a>
-    <img src="https://www16.a8.net/0.gif?a8mat=4B1VU0+8RJREA+4EKC+63OY9" width="1" height="1" alt="" style={{ border: 0 }} />
-  </div>
-</div>
-{/* --- ここまで --- */}
-
+        {/* --- A8広告エリア：横長バナー(600x94)への変更 --- */}
+          <div className="hidden lg:flex items-center ml-4 h-12 overflow-hidden">
+            <div className="scale-[0.5] md:scale-[0.6] origin-left flex items-center">
+              <a href="https://px.a8.net/svt/ejp?a8mat=4B1VU0+8RJREA+4EKC+62MDD" rel="nofollow">
+                <img 
+                  src="https://www28.a8.net/svt/bgt?aid=260428392530&wid=001&eno=01&mid=s00000020550001020000&mc=1" 
+                  width="600" 
+                  height="94" 
+                  alt="" 
+                  style={{ border: 0, maxWidth: 'none' }} 
+                />
+              </a>
+              <img 
+                src="https://www18.a8.net/0.gif?a8mat=4B1VU0+8RJREA+4EKC+62MDD" 
+                width="1" 
+                height="1" 
+                alt="" 
+                style={{ border: 0 }} 
+              />
+            </div>
+          </div>
+          {/* --- ここまで --- */}
         </div>
         <button 
           onClick={() => setShowMap(!showMap)}
