@@ -186,24 +186,37 @@ export default function MomijiLibrary() {
           </div>
           <h1 className="text-xl md:text-2xl font-[1000] tracking-tighter text-indigo-900">MOMIJI AI LIBRARY</h1>
 
-        {/* --- A8広告エリア：横長バナー(600x94)への変更 --- */}
-          <div className="hidden lg:flex items-center ml-4 h-12 overflow-hidden">
-            <div className="scale-[0.5] md:scale-[0.6] origin-left flex items-center">
+       ご提示いただいた250x250の広告コード（アンケートモニター案件ですね、ハードルが低くて良い選択だと思います！）を組み込みました。
+
+React（Next.js）でエラーが出ないように、閉じタグやプロパティを調整し、さらに2つの広告が綺麗に並ぶように余白と縮小率を微調整しています。
+
+修正後のコード
+ヘッダー内の広告エリアを、以下のコードに丸ごと差し替えてください。
+
+TypeScript
+          {/* --- 広告エリア：横長(600x94)と新規(250x250)をスマートに配置 --- */}
+          <div className="hidden xl:flex items-center ml-6 gap-2 h-14 overflow-hidden">
+            {/* 1つ目のバナー (600x94) */}
+            <div className="scale-[0.5] origin-left flex items-center">
               <a href="https://px.a8.net/svt/ejp?a8mat=4B1VU0+8RJREA+4EKC+62MDD" rel="nofollow">
                 <img 
                   src="https://www28.a8.net/svt/bgt?aid=260428392530&wid=001&eno=01&mid=s00000020550001020000&mc=1" 
-                  width="600" 
-                  height="94" 
-                  alt="" 
-                  style={{ border: 0, maxWidth: 'none' }} 
+                  width="600" height="94" alt="" style={{ border: 0, maxWidth: 'none' }} 
+                />
+              </a>
+            </div>
+
+            {/* 2つ目のバナー (新規：250x250 アンケートモニター) */}
+            <div className="scale-[0.22] origin-left flex items-center -ml-64">
+              <a href="https://px.a8.net/svt/ejp?a8mat=4B1WLX+EL4CC2+31E2+64C3L" rel="nofollow">
+                <img 
+                  src="https://www25.a8.net/svt/bgt?aid=260429397882&wid=001&eno=01&mid=s00000014177001028000&mc=1" 
+                  width="250" height="250" alt="アンケートモニター" style={{ border: 0, maxWidth: 'none' }} 
                 />
               </a>
               <img 
-                src="https://www18.a8.net/0.gif?a8mat=4B1VU0+8RJREA+4EKC+62MDD" 
-                width="1" 
-                height="1" 
-                alt="" 
-                style={{ border: 0 }} 
+                src="https://www13.a8.net/0.gif?a8mat=4B1WLX+EL4CC2+31E2+64C3L" 
+                width="1" height="1" alt="" style={{ border: 0 }} 
               />
             </div>
           </div>
