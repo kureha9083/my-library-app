@@ -178,28 +178,27 @@ export default function MomijiLibrary() {
   return (
     <main className="min-h-screen bg-[#fcfdfe] flex flex-col font-sans relative text-slate-900 overflow-x-hidden">
        
- {/* プレミアム・ヘッダー：超特大バナー最適化版 */}
-      <header className="bg-white shadow-lg fixed top-0 w-full z-50 border-b border-indigo-100 min-h-[280px] flex items-center">
-        <div className="max-w-[1920px] w-full mx-auto px-8 flex items-center justify-between gap-4">
+ {/* プレミアム・ヘッダー：デザイン修正・重なり解消版 */}
+      <header className="bg-white py-3 px-8 shadow-sm fixed top-0 w-full z-50 border-b border-indigo-50 min-h-[90px] flex items-center">
+        <div className="max-w-[1920px] w-full mx-auto px-6 flex items-center gap-4">
           
-          {/* 左側：ロゴエリア（縦長ヘッダーに合わせてバランス調整） */}
-          <div className="flex flex-col items-start gap-2 w-[220px] shrink-0">
-            <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-100">
-              <BookOpen size={30} className="text-white" />
+          {/* 左側：ロゴ・タイトルエリア */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+              <BookOpen size={22} className="text-white" />
             </div>
-            <h1 className="text-xl font-[1000] tracking-tighter text-indigo-900 leading-tight">
-              MOMIJI AI<br/>LIBRARY
+            <h1 className="text-xl md:text-2xl font-[1000] tracking-tighter text-indigo-900 leading-tight">
+              MOMIJI AI LIBRARY
             </h1>
           </div>
 
-          {/* 中央：250×250広告（等倍に近いサイズでドカンと配置） */}
-          <div className="flex-1 flex justify-center items-center py-2">
-            <div className="bg-white p-2 rounded-2xl shadow-md border border-slate-100 scale-[0.9] md:scale-[1.0] lg:scale-[1.05] transition-transform">
+          {/* 中央：縮小した250x250広告 */}
+          <div className="hidden lg:flex items-center ml-2 h-16 overflow-hidden">
+            <div className="scale-[0.35] md:scale-[0.45] origin-left flex items-center transition-transform">
               <a href="https://px.a8.net/svt/ejp?a8mat=4B1WLX+EL4CC2+31E2+64C3L" rel="nofollow" target="_blank" className="block">
                 <img 
                   src="https://www25.a8.net/svt/bgt?aid=260429397882&wid=001&eno=01&mid=s00000014177001028000&mc=1" 
-                  width="250" height="250" alt="メイン広告" 
-                  className="rounded-lg"
+                  width="250" height="250" alt="モニター広告" 
                   style={{ border: 0, maxWidth: 'none' }} 
                 />
               </a>
@@ -207,34 +206,37 @@ export default function MomijiLibrary() {
             </div>
           </div>
 
-          {/* 右側：既存の横長広告を縦にスタックして「広告エリア」としてまとめる */}
-          <div className="flex items-center gap-6 w-[480px] justify-end shrink-0">
-            <div className="hidden xl:flex flex-col gap-4 items-end pr-4 border-r border-slate-100">
-              {/* 600x94 */}
-              <div className="scale-[0.5] origin-right shadow-sm rounded-lg overflow-hidden border border-slate-50">
+          {/* 右側：拡大した他の広告とSPOTSボタン */}
+          <div className="flex-1 flex justify-end items-center gap-5">
+            <div className="hidden xl:flex items-center gap-2 relative">
+              {/* 600x94を拡大して表示 */}
+              <div className="scale-[0.6] origin-right transition-transform">
                 <a href="https://px.a8.net/svt/ejp?a8mat=4B1VU0+8RJREA+4EKC+62MDD" rel="nofollow" target="_blank">
                   <img src="https://www28.a8.net/svt/bgt?aid=260428392530&wid=001&eno=01&mid=s00000020550001020000&mc=1" width="600" height="94" alt="" style={{ border: 0 }} />
                 </a>
               </div>
-              {/* 468x60 */}
-              <div className="scale-[0.6] origin-right shadow-sm rounded-lg overflow-hidden border border-slate-50">
+              {/* 468x60も拡大して表示 */}
+              <div className="scale-[0.65] origin-right transition-transform">
                 <a href="https://px.a8.net/svt/ejp?a8mat=4B1WLX+FPLTGY+4286+64C3L" rel="nofollow" target="_blank">
                   <img src="https://www27.a8.net/svt/bgt?aid=260429397950&wid=001&eno=01&mid=s00000018951001028000&mc=1" width="468" height="60" alt="" style={{ border: 0 }} />
                 </a>
               </div>
+              {/* 広告ブロックツールの影響で表示されない場合の予備の余白確保（重なり対策） */}
+              <div className="w-[100px] h-10 flex xl:hidden" />
             </div>
 
             <button 
               onClick={() => setShowMap(!showMap)}
-              className="bg-slate-900 text-white px-6 py-4 rounded-2xl hover:bg-indigo-600 transition-all text-sm font-black shadow-xl flex flex-col items-center gap-1 shrink-0 active:scale-95"
+              className="bg-slate-900 text-white px-6 py-2.5 rounded-xl hover:bg-indigo-600 transition-all text-xs font-black shadow-lg flex items-center gap-2 whitespace-nowrap active:scale-95 shrink-0"
             >
-              {showMap ? <X size={20}/> : <MapPin size={20}/>}
+              {showMap ? <X size={16}/> : <MapPin size={16}/>}
               <span>SPOTS</span>
             </button>
           </div>
 
         </div>
       </header>
+      
       {/* マップ (死守) */}
       <AnimatePresence>
         {showMap && (
