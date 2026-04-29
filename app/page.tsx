@@ -177,67 +177,55 @@ export default function MomijiLibrary() {
 
   return (
     <main className="min-h-screen bg-[#fcfdfe] flex flex-col font-sans relative text-slate-900 overflow-x-hidden">
-      
-    {/* --- 画面中央の広告（背景の前・検索結果の後ろに配置） --- */}
-      {/* z-[5] に設定して、背景(z-0)より上、チャット(z-10以上)より下に配置 */}
-      <div className="fixed inset-0 pointer-events-none flex items-center justify-center z-[5]">
+       
+    {/* プレミアム・ヘッダー (死守) */}
+      <header className="bg-white py-3 px-8 shadow-sm fixed top-0 w-full z-50 flex items-center justify-between border-b border-indigo-50 min-h-[80px]">
         
-        {/* pointer-events-auto でこのバナー自体はクリック可能にする */}
-        <div className="pointer-events-auto bg-white p-2 rounded-xl shadow-2xl border border-indigo-100 scale-[0.8] transition-all hover:scale-[0.85] active:scale-[0.78]">
-          <a href="https://px.a8.net/svt/ejp?a8mat=4B1WLX+EL4CC2+31E2+64C3L" rel="nofollow" target="_blank" className="block cursor-pointer">
-            <img 
-              src="https://www25.a8.net/svt/bgt?aid=260429397882&wid=001&eno=01&mid=s00000014177001028000&mc=1" 
-              width="250" height="250" alt="アンケートモニター" style={{ border: 0 }} 
-            />
-          </a>
-          <img src="https://www13.a8.net/0.gif?a8mat=4B1WLX+EL4CC2+31E2+64C3L" width="1" height="1" alt="" style={{ border: 0 }} />
-        </div>
-      </div>
-      {/* --- ここまで --- */}
-
-     {/* プレミアム・ヘッダー (死守) */}
-      <header className="bg-white py-5 px-8 shadow-sm fixed top-0 w-full z-50 flex items-center justify-between border-b border-indigo-50">
-        <div className="flex items-center gap-3">
+        {/* 左側：ロゴとタイトル */}
+        <div className="flex items-center gap-3 shrink-0">
           <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-100">
             <BookOpen size={22} className="text-white" />
           </div>
-          <h1 className="text-xl md:text-2xl font-[1000] tracking-tighter text-indigo-900">MOMIJI AI LIBRARY</h1>
-         
-          {/* --- 広告エリア：横長バナー(600x94)と新規(468x60)を並列配置 --- */}
-          <div className="hidden xl:flex items-center ml-6 gap-2 h-12 overflow-hidden">
-            {/* 1つ目のバナー (600x94) */}
-            <div className="scale-[0.5] origin-left flex items-center">
-              <a href="https://px.a8.net/svt/ejp?a8mat=4B1VU0+8RJREA+4EKC+62MDD" rel="nofollow">
-                <img 
-                  src="https://www28.a8.net/svt/bgt?aid=260428392530&wid=001&eno=01&mid=s00000020550001020000&mc=1" 
-                  width="600" height="94" alt="" style={{ border: 0, maxWidth: 'none' }} 
-                />
+          <h1 className="text-xl md:text-2xl font-[1000] tracking-tighter text-indigo-900 hidden sm:block">MOMIJI AI LIBRARY</h1>
+        </div>
+
+        {/* 中央：250×250広告（大きめに配置） */}
+        <div className="flex-1 flex justify-center items-center overflow-hidden h-20">
+          <div className="scale-[0.55] md:scale-[0.65] origin-center flex items-center transition-transform">
+            <a href="https://px.a8.net/svt/ejp?a8mat=4B1WLX+EL4CC2+31E2+64C3L" rel="nofollow" target="_blank">
+              <img 
+                src="https://www25.a8.net/svt/bgt?aid=260429397882&wid=001&eno=01&mid=s00000014177001028000&mc=1" 
+                width="250" height="250" alt="アンケートモニター" style={{ border: 0, maxWidth: 'none' }} 
+              />
+            </a>
+            <img src="https://www13.a8.net/0.gif?a8mat=4B1WLX+EL4CC2+31E2+64C3L" width="1" height="1" alt="" style={{ border: 0 }} />
+          </div>
+        </div>
+
+        {/* 右側：既存の広告2つとSPOTSボタン */}
+        <div className="flex items-center gap-4 shrink-0">
+          <div className="hidden xl:flex items-center gap-2">
+            {/* 600x94バナー */}
+            <div className="scale-[0.4] origin-right">
+              <a href="https://px.a8.net/svt/ejp?a8mat=4B1VU0+8RJREA+4EKC+62MDD" rel="nofollow" target="_blank">
+                <img src="https://www28.a8.net/svt/bgt?aid=260428392530&wid=001&eno=01&mid=s00000020550001020000&mc=1" width="600" height="94" alt="" style={{ border: 0, maxWidth: 'none' }} />
               </a>
             </div>
-
-            {/* 2つ目のバナー (新規：468x60 クラウドワークス系案件) */}
-            <div className="scale-[0.7] origin-left flex items-center -ml-40">
-              <a href="https://px.a8.net/svt/ejp?a8mat=4B1WLX+FPLTGY+4286+64C3L" rel="nofollow">
-                <img 
-                  src="https://www27.a8.net/svt/bgt?aid=260429397950&wid=001&eno=01&mid=s00000018951001028000&mc=1" 
-                  width="468" height="60" alt="案件広告" style={{ border: 0, maxWidth: 'none' }} 
-                />
+            {/* 468x60バナー */}
+            <div className="scale-[0.5] origin-right">
+              <a href="https://px.a8.net/svt/ejp?a8mat=4B1WLX+FPLTGY+4286+64C3L" rel="nofollow" target="_blank">
+                <img src="https://www27.a8.net/svt/bgt?aid=260429397950&wid=001&eno=01&mid=s00000018951001028000&mc=1" width="468" height="60" alt="" style={{ border: 0, maxWidth: 'none' }} />
               </a>
-              <img 
-                src="https://www14.a8.net/0.gif?a8mat=4B1WLX+FPLTGY+4286+64C3L" 
-                width="1" height="1" alt="" style={{ border: 0 }} 
-              />
             </div>
           </div>
-          {/* --- ここまで --- */}
-       
+
+          <button 
+            onClick={() => setShowMap(!showMap)}
+            className="bg-slate-900 text-white px-6 py-2.5 rounded-xl hover:bg-indigo-600 transition-all text-xs font-black shadow-lg active:scale-95 flex items-center gap-2 whitespace-nowrap"
+          >
+            {showMap ? <><X size={16}/> CLOSE</> : <><MapPin size={16}/> SPOTS</>}
+          </button>
         </div>
-        <button 
-          onClick={() => setShowMap(!showMap)}
-          className="bg-slate-900 text-white px-6 py-2.5 rounded-xl hover:bg-indigo-600 transition-all text-xs font-black shadow-lg active:scale-95 flex items-center gap-2"
-        >
-          {showMap ? <><X size={16}/> CLOSE</> : <><MapPin size={16}/> SPOTS</>}
-        </button>
       </header>
 
       {/* マップ (死守) */}
