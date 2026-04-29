@@ -178,6 +178,20 @@ export default function MomijiLibrary() {
   return (
     <main className="min-h-screen bg-[#fcfdfe] flex flex-col font-sans relative text-slate-900 overflow-x-hidden">
       
+      {/* --- 画面中央の広告（背景として配置） --- */}
+      <div className="fixed inset-0 pointer-events-none flex items-center justify-center z-0 opacity-20 hover:opacity-100 transition-opacity duration-500">
+        <div className="pointer-events-auto bg-white p-2 rounded-xl shadow-2xl border border-indigo-50 scale-125">
+          <a href="https://px.a8.net/svt/ejp?a8mat=4B1WLX+EL4CC2+31E2+64C3L" rel="nofollow">
+            <img 
+              src="https://www25.a8.net/svt/bgt?aid=260429397882&wid=001&eno=01&mid=s00000014177001028000&mc=1" 
+              width="250" height="250" alt="アンケートモニター" style={{ border: 0 }} 
+            />
+          </a>
+          <img src="https://www13.a8.net/0.gif?a8mat=4B1WLX+EL4CC2+31E2+64C3L" width="1" height="1" alt="" style={{ border: 0 }} />
+        </div>
+      </div>
+     
+      {/* --- ここまで --- */}
      {/* プレミアム・ヘッダー (死守) */}
       <header className="bg-white py-5 px-8 shadow-sm fixed top-0 w-full z-50 flex items-center justify-between border-b border-indigo-50">
         <div className="flex items-center gap-3">
@@ -185,8 +199,9 @@ export default function MomijiLibrary() {
             <BookOpen size={22} className="text-white" />
           </div>
           <h1 className="text-xl md:text-2xl font-[1000] tracking-tighter text-indigo-900">MOMIJI AI LIBRARY</h1>
-          {/* --- 広告エリア：横長(600x94)と新規(250x250)をスマートに配置 --- */}
-          <div className="hidden xl:flex items-center ml-6 gap-2 h-14 overflow-hidden">
+         
+          {/* --- 広告エリア：横長バナー(600x94)と新規(468x60)を並列配置 --- */}
+          <div className="hidden xl:flex items-center ml-6 gap-2 h-12 overflow-hidden">
             {/* 1つ目のバナー (600x94) */}
             <div className="scale-[0.5] origin-left flex items-center">
               <a href="https://px.a8.net/svt/ejp?a8mat=4B1VU0+8RJREA+4EKC+62MDD" rel="nofollow">
@@ -197,21 +212,22 @@ export default function MomijiLibrary() {
               </a>
             </div>
 
-            {/* 2つ目のバナー (新規：250x250 アンケートモニター) */}
-            <div className="scale-[0.22] origin-left flex items-center -ml-64">
-              <a href="https://px.a8.net/svt/ejp?a8mat=4B1WLX+EL4CC2+31E2+64C3L" rel="nofollow">
+            {/* 2つ目のバナー (新規：468x60 クラウドワークス系案件) */}
+            <div className="scale-[0.7] origin-left flex items-center -ml-40">
+              <a href="https://px.a8.net/svt/ejp?a8mat=4B1WLX+FPLTGY+4286+64C3L" rel="nofollow">
                 <img 
-                  src="https://www25.a8.net/svt/bgt?aid=260429397882&wid=001&eno=01&mid=s00000014177001028000&mc=1" 
-                  width="250" height="250" alt="アンケートモニター" style={{ border: 0, maxWidth: 'none' }} 
+                  src="https://www27.a8.net/svt/bgt?aid=260429397950&wid=001&eno=01&mid=s00000018951001028000&mc=1" 
+                  width="468" height="60" alt="案件広告" style={{ border: 0, maxWidth: 'none' }} 
                 />
               </a>
               <img 
-                src="https://www13.a8.net/0.gif?a8mat=4B1WLX+EL4CC2+31E2+64C3L" 
+                src="https://www14.a8.net/0.gif?a8mat=4B1WLX+FPLTGY+4286+64C3L" 
                 width="1" height="1" alt="" style={{ border: 0 }} 
               />
             </div>
           </div>
           {/* --- ここまで --- */}
+       
         </div>
         <button 
           onClick={() => setShowMap(!showMap)}
