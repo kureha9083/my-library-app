@@ -178,10 +178,13 @@ export default function MomijiLibrary() {
   return (
     <main className="min-h-screen bg-[#fcfdfe] flex flex-col font-sans relative text-slate-900 overflow-x-hidden">
       
-     {/* --- 画面中央の広告（クリック可能・はっきり表示版） --- */}
-      <div className="fixed inset-0 pointer-events-none flex items-center justify-center z-0">
-        <div className="pointer-events-auto bg-white p-2 rounded-xl shadow-2xl border border-indigo-100 scale-125 transition-transform hover:scale-[1.3]">
-          <a href="https://px.a8.net/svt/ejp?a8mat=4B1WLX+EL4CC2+31E2+64C3L" rel="nofollow" target="_blank" className="block">
+    {/* --- 画面中央の広告（背景の前・検索結果の後ろに配置） --- */}
+      {/* z-[5] に設定して、背景(z-0)より上、チャット(z-10以上)より下に配置 */}
+      <div className="fixed inset-0 pointer-events-none flex items-center justify-center z-[5]">
+        
+        {/* pointer-events-auto でこのバナー自体はクリック可能にする */}
+        <div className="pointer-events-auto bg-white p-2 rounded-xl shadow-2xl border border-indigo-100 scale-[0.8] transition-all hover:scale-[0.85] active:scale-[0.78]">
+          <a href="https://px.a8.net/svt/ejp?a8mat=4B1WLX+EL4CC2+31E2+64C3L" rel="nofollow" target="_blank" className="block cursor-pointer">
             <img 
               src="https://www25.a8.net/svt/bgt?aid=260429397882&wid=001&eno=01&mid=s00000014177001028000&mc=1" 
               width="250" height="250" alt="アンケートモニター" style={{ border: 0 }} 
@@ -191,7 +194,7 @@ export default function MomijiLibrary() {
         </div>
       </div>
       {/* --- ここまで --- */}
-      
+
      {/* プレミアム・ヘッダー (死守) */}
       <header className="bg-white py-5 px-8 shadow-sm fixed top-0 w-full z-50 flex items-center justify-between border-b border-indigo-50">
         <div className="flex items-center gap-3">
