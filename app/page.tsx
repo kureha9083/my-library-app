@@ -185,15 +185,6 @@ export default function MomijiLibrary() {
             <BookOpen size={22} className="text-white" />
           </div>
           <h1 className="text-xl md:text-2xl font-[1000] tracking-tighter text-indigo-900">MOMIJI AI LIBRARY</h1>
-
-       ご提示いただいた250x250の広告コード（アンケートモニター案件ですね、ハードルが低くて良い選択だと思います！）を組み込みました。
-
-React（Next.js）でエラーが出ないように、閉じタグやプロパティを調整し、さらに2つの広告が綺麗に並ぶように余白と縮小率を微調整しています。
-
-修正後のコード
-ヘッダー内の広告エリアを、以下のコードに丸ごと差し替えてください。
-
-TypeScript
           {/* --- 広告エリア：横長(600x94)と新規(250x250)をスマートに配置 --- */}
           <div className="hidden xl:flex items-center ml-6 gap-2 h-14 overflow-hidden">
             {/* 1つ目のバナー (600x94) */}
